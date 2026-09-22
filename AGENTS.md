@@ -1,0 +1,165 @@
+Working rules (read before every task)
+YOU MUST
+Work only on the phase you were given. The rest of the project is not your concern right now.
+Before writing code, present a short plan and wait for my confirmation.
+Confirm packages, functions, addresses and layouts against the official source before using them.
+Test with real data (fixtures captured from mainnet/devnet) whenever the phase requires it.
+Run pnpm check before saying you are done, and show the real output.
+Record decisions, versions and discrepancies in docs/DECISIONS.md.
+Stop and ask when something is ambiguous or impossible to verify.
+Make small commits with conventional messages (feat:, fix:, test:, docs:, chore:).
+YOU MUST NOT
+Work ahead on later phases, or "improve" code from earlier phases without being asked.
+Invent functions, parameters, addresses or response formats.
+Change or delete tests to make them pass. If a test is wrong, explain why and ask.
+Use any, @ts-ignore, .skip, biome-ignore or loosen the strict configuration without a recorded justification.
+Add dependencies without justifying them in docs/DECISIONS.md.
+Use mocks or made-up data where the phase requires real data.
+Claim something works without proving it with commands and output.
+Write code that signs, sends transactions or handles private keys.
+Put secrets, API keys or full RPC URLs in code, logs or commits.
+AT THE END OF EVERY PHASE, DELIVER
+What was done.
+Output of the commands proving each acceptance criterion.
+Decisions recorded.
+What is left undone or uncertain (never omit this).
+Project context
+What we are building
+
+Vigil is an open-source (Apache-2.0), read-only tool that analyzes Squads v4 multisig proposals on Solana, as well as arbitrary base64-encoded Solana transactions, and explains in plain language what they will do when executed, flagging risks by severity, before members vote.
+
+Two interfaces on top of one analysis engine:
+
+A static web app for signers (many are not technical).
+A CLI for developers, automation and alerts.
+
+The engine (@vigil/core) is isomorphic: it runs in the browser and in Node.
+
+Value proposition: an independent second opinion. If the official Squads interface is compromised (as the Safe interface was in the 2025 Bybit hack), or simply presents information too technically, Vigil reads the data directly from the chain and tells the signer what will actually happen.
+
+Scope: the MVP supports Squads v4 and raw base64 transactions. Multisig-specific reading lives behind a MultisigAdapter interface, so other programs (Squads v3, SPL Governance/Realms) can be added later without touching decoders, rules or UIs.
+
+Non-negotiable principles
+Read-only. Never request, accept, store or process private keys or seed phrases. Never connect wallets. Never sign or send transactions. Only RPC methods on the allowlist (see docs/reference.md) are allowed, and simulateTransaction is only called with sigVerify: false. An automated test must fail if code calls any method outside the allowlist.
+No required backend. Everything runs in the browser or on the user's machine. The only server component is an optional RPC proxy that only forwards allowlisted methods.
+Zero telemetry. No analytics, trackers, third-party scripts, CDNs, external fonts, or network requests beyond the RPC and the program-verification API (which the user can disable).
+Fidelity above all. Never present as certain what has not been verified. Every piece of information carries explicit provenance: onchain, idl-declared (declared by the program author, does not prove behavior), external-api, simulation, rule-inference.
+Fail visibly. RPC errors, unavailable simulation, external API outages and undecodable instructions all appear in the report. The absence of findings must never look "safe" when the analysis was incomplete. No interface ever describes a proposal as "safe" or "secure".
+On-chain data is hostile input. Token names, symbols, IDLs, memos and metadata may be crafted by an attacker. All of it is sanitized and rendered as text, never as HTML.
+Verification rule (critical)
+
+This project was specified with knowledge current as of May 2026. Before using any package, function, parameter, API, account layout, program address or discriminator, confirm it against the official source (the project's GitHub repository, npm page, official docs, or the Agave source code for native programs).
+
+Never invent functions, parameters or fields. If it is not in the documentation, assume it does not exist.
+If anything in these instructions contradicts the official source, the official source wins. Follow it and record the discrepancy in docs/DECISIONS.md.
+Pin exact versions and record where you confirmed each API.
+If you cannot verify something critical, stop and ask me.
+Every decoder and every account reader is tested against real data captured from mainnet or devnet, never only hand-built bytes.
+Tech stack
+TypeScript strict (strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes), ESM only.
+Node.js ≥ 22 LTS, pnpm workspaces monorepo.
+Solana: @solana/kit. No @solana/web3.js v1 in production code (allowed as devDependency in tests/scripts).
+Native programs: @solana-program/* clients where they exist and provide parsing; otherwise hand-written decoders based on docs/reference.md and the official source.
+Squads v4: client generated with Codama from the official Squads v4 IDL, generated code committed. @sqds/multisig only as devDependency (cross-checks and devnet e2e).
+Third-party IDLs: @codama/nodes-from-anchor (legacy and new Anchor IDLs) and Codama's dynamic parser if it exists and fits.
+Hashing: WebCrypto (crypto.subtle). zlib: fflate.
+Web: Vite + React + TypeScript, plain CSS. No UI libraries, no CSS-in-JS, no Tailwind.
+CLI: node:util (parseArgs, styleText). No commander, yargs or chalk.
+Tests: Vitest; fast-check for fuzzing. Lint/format: Biome.
+RPC proxy: Cloudflare Workers (wrangler).
+
+Every new runtime dependency is justified in docs/DECISIONS.md (purpose, alternatives, size, maintenance). Prefer platform APIs over packages.
+
+Repository layout
+vigil/
+  packages/core/       # analysis engine; I/O only through injected interfaces
+  packages/cli/
+  apps/web/
+  apps/rpc-proxy/
+  fixtures/            # real mainnet/devnet data for offline tests
+  scripts/             # client generation, fixture capture, devnet e2e
+  examples/github-actions/
+  docs/                # architecture.md, reference.md, rules.md, threat-model.md,
+                       # report.schema.json, DECISIONS.md, maintainers.md
+  .github/workflows/
+  AGENTS.md README.md SECURITY.md CONTRIBUTING.md LICENSE
+Coding standards
+Amounts are always bigint (lamports, token amounts, u64 indices, slots). Decimal formatting with exact integer arithmetic, never floats.
+Addresses use kit's Address type.
+The core performs no I/O directly: it receives RpcClient, HttpClient and Clock by injection (offline tests, deterministic snapshots).
+Risk rules are pure and deterministic. No any. Typed errors with codes.
+No on-chain string reaches any interface without the sanitizer.
+Code, comments and docs in English. The UI ships in English and European Portuguese (pt-PT).
+Supply-chain security
+Lockfile committed; CI uses pnpm install --frozen-lockfile. Exact versions (no ^/~).
+Dependency install scripts do not run (pnpm 10 default); allow only what is strictly required, with justification.
+GitHub Actions pinned by full commit SHA. Minimal permissions.
+No secrets in the repo. RPC URLs may contain API keys: they never appear in logs, reports, errors or alerts; only the host is shown.
+Central contract: AnalysisReport
+
+Defined in packages/core/src/report.ts. The CLI and web only present it. Adjust names if needed, keep the structure, record changes.
+
+```ts
+type Severity = "critical" | "warning" | "info";
+type Provenance = "onchain" | "idl-declared" | "external-api" | "simulation" | "rule-inference";
+type Verdict = "critical" | "incomplete" | "attention" | "no-findings";
+
+interface AnalysisReport {
+  schemaVersion: 1;
+  generatedAt: string;              // ISO 8601, from injected Clock
+  cluster: "mainnet" | "devnet" | "testnet" | "unknown";
+  rpcHost: string;                  // host only, never full URL
+  contextSlot: bigint;
+  input:
+    | { kind: "squads-proposal"; multisig: Address; transactionIndex: bigint }
+    | { kind: "raw-transaction"; sha256: string };
+  multisig?: MultisigSummary;
+  proposal?: ProposalSummary;
+  transactionKind?: "vault" | "config" | "batch";
+  instructions: DecodedInstruction[];
+  configActions?: ConfigAction[];
+  programs: ProgramInfo[];
+  simulation?: SimulationResult;
+  findings: Finding[];
+  verdict: Verdict;
+  completeness: { complete: boolean; gaps: AnalysisGap[] };
+}
+
+interface DecodedInstruction {
+  index: number;
+  batchItem?: number;
+  programId: Address;
+  programLabel?: string;
+  decoder: "native" | "squads" | "program-metadata-idl" | "anchor-idl" | "none";
+  name?: string;
+  summary?: { key: string; params: Record<string, string> };  // i18n key + params
+  args?: Record<string, unknown>;
+  accounts: Array<{
+    address: Address; role?: string; isSigner: boolean; isWritable: boolean;
+    label?: string; fromLookupTable?: Address;
+  }>;
+  rawDataHex: string;
+  provenance: Provenance;
+}
+
+interface Finding {
+  ruleId: string;                   // e.g. "VGL-C001"
+  severity: Severity;
+  titleKey: string;
+  params: Record<string, string>;
+  instructionIndex?: number;
+  evidence: string[];
+  provenance: Provenance;
+}
+```
+
+The report serializes to JSON deterministically (bigint → string), with a JSON Schema at docs/report.schema.json.
+
+Verdict rule: critical if any critical finding; else incomplete if not complete; else attention if any warning; else no-findings. UI text for no-findings: "No findings from the checks performed", never "Safe".
+
+How to work with me
+Reply in the language I write in.
+Start each phase with a short plan and the decisions you need from me.
+End each phase with the delivery listed in the working rules.
+Do not start the next phase until I ask.
+Always consult docs/reference.md, which is also subject to the verification rule.
