@@ -16,7 +16,12 @@ export type { CompiledInstructionRef, CompiledMessage, LookupRef } from "./messa
 export { fromVaultTransactionMessage, parseSquadsTransactionMessage } from "./message.js";
 export { TOKEN_2022_AUTHORITY_TYPES, TOKEN_2022_PROGRAM_ADDRESS } from "./native/token-2022.js";
 export { decodeVaultTransactionMessage } from "./squads-proposal.js";
-export type { ParsedWireTransaction, RawTransactionDecodeResult } from "./transaction.js";
+export type {
+  ParsedWireTransaction,
+  RawTransactionDecodeResult,
+  TransactionVersion,
+  V1TransactionConfig,
+} from "./transaction.js";
 export { decodeRawTransaction, parseWireTransaction } from "./transaction.js";
 export type {
   EmbeddedMessageRef,

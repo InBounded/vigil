@@ -215,7 +215,7 @@ describe("decodeRawTransaction input validation", () => {
     return getBase64EncodedWireTransaction(compileTransaction(message));
   }
 
-  it.each(["legacy", 0] as const)("decodes a kit-built %s transaction", async (version) => {
+  it.each(["legacy", 0, 1] as const)("decodes a kit-built %s transaction", async (version) => {
     const result = await decodeRawTransaction(emptyRpc, kitTransaction(version));
     expect(result.version).toBe(version);
     expect(result.feePayer).toBe(addr(7));
@@ -229,11 +229,5 @@ describe("decodeRawTransaction input validation", () => {
     const bytes = getBase64Encoder().encode(kitTransaction(0));
     const trailing = getBase64Decoder().decode(new Uint8Array([...bytes, 7]));
     await expect(decodeRawTransaction(emptyRpc, trailing)).rejects.toThrow(/trailing/);
-  });
-
-  it("rejects v1 messages with a typed error until real v1 data can be tested", async () => {
-    await expect(decodeRawTransaction(emptyRpc, kitTransaction(1))).rejects.toThrow(
-      /v1 transaction messages are not supported/,
-    );
   });
 });

@@ -4,19 +4,39 @@ import {
   getCompiledTransactionMessageDecoder,
   getTransactionDecoder,
   type ReadonlyUint8Array,
+  transactionConfigMaskHasComputeUnitLimit,
+  transactionConfigMaskHasHeapSize,
+  transactionConfigMaskHasLoadedAccountsDataSizeLimit,
+  transactionConfigMaskHasPriorityFee,
 } from "@solana/kit";
 import type { RpcClient } from "../rpc/types.js";
 import { toHex } from "./bytes.js";
 import { decodeMessageWithLookups, type MessageDecodeResult } from "./decode.js";
 import { DecodeError } from "./errors.js";
-import type { CompiledMessage } from "./message.js";
+import type { CompiledInstructionRef, CompiledMessage } from "./message.js";
+
+export type TransactionVersion = "legacy" | 0 | 1;
+
+/**
+ * The inline compute-budget settings of a v1 message (SIMD-0385), replacing Compute Budget
+ * program instructions. Field names and order as in `@solana/kit`'s `V1TransactionConfig` and
+ * anza-xyz/solana-sdk `message/src/versions/v1/config.rs` (`TransactionConfig`).
+ */
+export interface V1TransactionConfig {
+  readonly priorityFeeLamports?: bigint;
+  readonly computeUnitLimit?: number;
+  readonly loadedAccountsDataSizeLimit?: number;
+  readonly heapSize?: number;
+}
 
 export interface RawTransactionDecodeResult extends MessageDecodeResult {
   /** Hex SHA-256 of the decoded wire-transaction bytes (identifies the input in the report). */
   readonly sha256: string;
-  readonly version: "legacy" | 0;
+  readonly version: TransactionVersion;
   readonly feePayer: Address;
   readonly signatureCount: number;
+  /** Present only for v1 transactions. */
+  readonly transactionConfig?: V1TransactionConfig;
 }
 
 const base64Bytes = getBase64Encoder();
@@ -27,9 +47,8 @@ const BASE64_PATTERN = /^[A-Za-z0-9+/]*={0,2}$/;
  * `getTransaction(..., { encoding: "base64" })`), resolves its lookup tables and decodes every
  * instruction, recursing into Squads proposal-creation messages. Nothing is signed or sent.
  *
- * v1 messages (SIMD-0385; `VersionedMessage::V1` in anza-xyz/solana-sdk, live on mainnet — see
- * `docs/DECISIONS.md`) are rejected for now: the RPC client cannot fetch them yet, so no real v1
- * transaction could be captured to test against, and `AGENTS.md` forbids untested decoders.
+ * Legacy, v0 and v1 (SIMD-0385) messages are supported. v1 messages have no address lookup
+ * tables; their compute budget is carried inline and returned as `transactionConfig`.
  */
 export async function decodeRawTransaction(
   rpc: RpcClient,
@@ -46,6 +65,9 @@ export async function decodeRawTransaction(
     feePayer: message.feePayer,
     sha256,
     signatureCount,
+    ...(message.transactionConfig === undefined
+      ? {}
+      : { transactionConfig: message.transactionConfig }),
     version: message.version,
   };
 }
@@ -53,9 +75,10 @@ export async function decodeRawTransaction(
 export interface ParsedWireTransaction {
   readonly signatureCount: number;
   readonly message: {
-    readonly version: "legacy" | 0;
+    readonly version: TransactionVersion;
     readonly feePayer: Address;
     readonly compiled: CompiledMessage;
+    readonly transactionConfig?: V1TransactionConfig;
   };
 }
 
@@ -86,9 +109,6 @@ export function parseWireTransaction(bytes: ReadonlyUint8Array): ParsedWireTrans
   } catch (error) {
     throw asTransactionError(error);
   }
-  if (compiled.version === 1) {
-    throw new DecodeError("INVALID_TRANSACTION", "v1 transaction messages are not supported yet");
-  }
 
   const { header, staticAccounts } = compiled;
   const feePayer = staticAccounts[0];
@@ -110,14 +130,28 @@ export function parseWireTransaction(bytes: ReadonlyUint8Array): ParsedWireTrans
     );
   }
   const lookups = compiled.version === 0 ? (compiled.addressTableLookups ?? []) : [];
-  return {
-    message: {
-      compiled: {
-        instructions: compiled.instructions.map((instruction) => ({
+  const instructions: CompiledInstructionRef[] =
+    compiled.version === 1
+      ? compiled.instructionHeaders.map((header, i) => {
+          const payload = compiled.instructionPayloads[i];
+          if (payload === undefined) {
+            throw new DecodeError("INVALID_TRANSACTION", `v1 instruction ${i} has no payload`);
+          }
+          return {
+            accountIndexes: payload.instructionAccountIndices,
+            data: payload.instructionData,
+            programIndex: header.programAccountIndex,
+          };
+        })
+      : compiled.instructions.map((instruction) => ({
           accountIndexes: instruction.accountIndices ?? [],
           data: instruction.data ?? new Uint8Array(),
           programIndex: instruction.programAddressIndex,
-        })),
+        }));
+  return {
+    message: {
+      compiled: {
+        instructions,
         lookups: lookups.map((lookup) => ({
           readonlyIndexes: lookup.readonlyIndexes,
           tableAddress: lookup.lookupTableAddress,
@@ -129,10 +163,53 @@ export function parseWireTransaction(bytes: ReadonlyUint8Array): ParsedWireTrans
         staticAccounts,
       },
       feePayer,
+      ...(compiled.version === 1
+        ? { transactionConfig: v1Config(compiled.configMask, compiled.configValues) }
+        : {}),
       version: compiled.version,
     },
     signatureCount: Object.keys(transaction.signatures).length,
   };
+}
+
+type ConfigValue = { kind: "u32"; value: number } | { kind: "u64"; value: bigint };
+
+/**
+ * Names the v1 config values. kit 8.3.0 does this internally (`decompileTransactionConfig`) but
+ * doesn't export it; this mirrors it using kit's exported mask predicates, in the same order.
+ */
+function v1Config(mask: number, values: readonly ConfigValue[]): V1TransactionConfig {
+  const config: {
+    priorityFeeLamports?: bigint;
+    computeUnitLimit?: number;
+    loadedAccountsDataSizeLimit?: number;
+    heapSize?: number;
+  } = {};
+  let index = 0;
+  const next = (name: string, kind: ConfigValue["kind"]): ConfigValue => {
+    const value = values[index++];
+    if (value === undefined || value.kind !== kind) {
+      throw new DecodeError(
+        "INVALID_TRANSACTION",
+        `v1 config value ${name} is missing or malformed`,
+      );
+    }
+    return value;
+  };
+  const u32 = (name: string): number => Number(next(name, "u32").value);
+  if (transactionConfigMaskHasPriorityFee(mask)) {
+    config.priorityFeeLamports = BigInt(next("priorityFeeLamports", "u64").value);
+  }
+  if (transactionConfigMaskHasComputeUnitLimit(mask)) {
+    config.computeUnitLimit = u32("computeUnitLimit");
+  }
+  if (transactionConfigMaskHasLoadedAccountsDataSizeLimit(mask)) {
+    config.loadedAccountsDataSizeLimit = u32("loadedAccountsDataSizeLimit");
+  }
+  if (transactionConfigMaskHasHeapSize(mask)) {
+    config.heapSize = u32("heapSize");
+  }
+  return config;
 }
 
 function parseBase64(input: string): ReadonlyUint8Array {
