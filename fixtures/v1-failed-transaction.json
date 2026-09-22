@@ -1,0 +1,25 @@
+{
+  "capturedAt": "2026-09-22T22:22:43.264Z",
+  "cluster": "mainnet",
+  "contextSlot": "449506996",
+  "description": "A real mainnet v1 transaction (SIMD-0385) that failed on-chain: 2TYLLmgr... at slot 449506996, meta.err InstructionError [0, Custom 7] (bigint values in err are stored as decimal strings). The transaction is 2,310 bytes, above the legacy/v0 1,232-byte limit, with inline compute budget (configMask 15). It is the transaction cited as evidence for v1 in docs/DECISIONS.md.",
+  "transactions": {
+    "2TYLLmgrBe82yNhbQo2sZRWE3Zp7bAykig4BqW3Ux3LfcosSpFKYHf9Z75m5RcHhCPdGbmkJ7i9ws5M3TfH1Ea9C": {
+      "blockTime": "1790114409",
+      "err": {
+        "InstructionError": [
+          "0",
+          {
+            "Custom": "7"
+          }
+        ]
+      },
+      "loadedAddresses": {
+        "readonly": [],
+        "writable": []
+      },
+      "slot": "449506996",
+      "transactionBase64": "gQEAMQ8AAAA4fK/KAsW5AKsirViE12vUSiUW9T08vymvcAZAiGnKDQU9Fe5uSyX8ZGiI/vyoFpbvu2MhHtVB0KLqqPTbEX8UntQGnK6RFFOyb6pxWELTKthgF6wmKGKZl0hEIQiHiaVzlw0JbXqB3rpFSFlwMAsJuji2y+RN9RoRTTqRAm+gT4DNDb6hnJSNMmx+We4bv5lJqUc5nnkw1hwKaeBp2GZDknlDnmUQwD1l+tkx6J0Evgu3DVGXH1HEFfs0TAfbQZ8hIkw87hA4lK0wKLWG/6FwSjRxo4xilbobv77LmQEwVWWvX4YBtG9aTa+Pa3+hByg9AGReMcorUQz1xuV87aGX6JGpdI1Kf7N1/QvmyzdFNKfejtea41vwOA1AJVPJ8LOiZbPQ9Glq+QtQ0oKDBsVeAsUQbDVzgjIrlns2/2LpStNaumQ5FNUNWMi7d1gnjcX5C+/6GCiuakEnpLTWIJH+8NPXqo+wYNgpG0xNR12v92LJa9wNrOs2wBLq0S7TqUhBYfoJEaVIY0EtYx9OB4cDKWwDXw0TM6DZyIONc7cQ/m4tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABVuD2k2Zaz0TbFWi/F1uqUYnLl/XS/ztlXSu2/W0YsAJ8c5gsxRfJaaTt0qG3Ogu8FqeXoZAYGLxMF1Z2CCR2BqfVFxjHdMkoVmOYaR1etoteuKObS21cc1VbIQAAAAAG3fbh7nWP3hhCXbzkbM3athr8TYO5DSf+vfko2KGL/AisSXs1mtBb5K/XVt5imgg9EBnQCZAPPvU1+LDY4CzYC6l55NgcTLZRUdpj8EZxELOFMteWGz9iiXes7z/TiPsMNf+pBVqOVo2o97wHVhUnTPHJLKQfQACcUWqkFMJ8cA0KyUjqjMx1zF0MUKq53wmhx2oSn7XCN1Y6bp1sdsZ6F/X5jTXT9s3Q74rRb33cHib21v5nkWMlDgJJuwIQozQYw/DeRwvrPv+t5KZH/DOj4i7YFmfSvyiSS7vr9XXhTCBdfgwgejgbMjr9+VAkDfoYkZoeXFp3XWWi2XwDUUJfI518LFDJhY2vxOe7aoDaaecO9k3rtMCRPVLsj7091UYoo2ec6PhY8YMx7Vp487liIpbYeH1V+UHntIsaAmuUBipq+5UPz1PLEZMBjTF59yMKFvpICQj1UXXncCWO58PRL0vvv8xUCp/1BGJXG2AAfsv7DxxTEXqh5N0tsTYxuQk3osPS6WARKXQPrcX7vd89rODvt0C+2/mfO+neDeSWQzg7SZQkWgK4+EVWbvhUcjHXm5sgB25q+asgw/ARKgdSOmP7D3se8sB9oQhyXLpF2FlrbvR9dJ4zlt3iKhRd4Hw6hl5p7g9UgMq89mNX5NwvGNWNRcHqdIn7NyPZeTxyplC6LMthNIFkR60STLp1f7dD0mhEfJmFqAqcoh2n2vM/ViGG820kaXj/Qv6ZPT3MiwTuftYXnDk7B5NEa4yuCGpduU4CTmQw/rXDruPr/SdNXDjndEU57Gvwbaof+WtW6l2+kvH6Qny5LhNbU+aWBMs1S3CFHrL6mg9FKs8+C+DLaIYTWHrfPQ9JCvWMt20liLLSKhcYzRjPN0m6Hjubi8RrQW5jRb0tGFfaCfnzmCcYt9JgPTVwgjsaYldUyuB3NW+atKTxlY3AqclMP7csB5lYQ+2kheOiTxDGk5n4GZQPdW1UytPsmnp9uL0DDDBH/VxhfJPVbeyed2X27nWxzIN5KTZU4x8fUb3hMLl78d/z4Gcwh8xdnR/7Cibbh6qmLIZVzK+UbWY5zGCWXFVAa/y0wYHxM7XXGH92M+HjILEumpoAQuuiN92pOy/ty+3LDdxjZ/W/Lkaim/bTQscqayKfGgq7U+pTuank4B90xBejqwcP/dXMspcAiBDKHp3NGaahFWqriVGtouEjOAhSvS09ubWCz14VbOuily6TeZ0Kqi//OSkRwLdufkDEu1gI3URlc91T4JutOh9GU1VVlCes8TbrAfwcTog9I8i1hEq1mjf2at1XxemsO1PgWdNcZLHupfgyuAjgcUMFZMyyTUk9y9of6EmW8l1sYtn/hRREuMehVo3CU+XpLH72d6FUB/t1ZJTsqIIJc7xnSFEg08m73WTOiaysZjk+OSFyxg28vuJbwm/PKpeKV9e3VSVCXL9KgTJo7ld4omi+DqzxorVnth2db7kfbHbNF9BvPDwvxc6hLBzVnWu7eUWIu2hXV1mDu6fSr2w/jIPdUW4VDu/KlXOjkV0hhxAjYecy/MAKv1B3KLTSNRl5VqMCZco8ttKA5UfZ4TineI+2m3G19MJaMeJ4UuN2OkWRDVWEL1db3vWNb/N22w1XIlnYzsrzKmyrRqdnP4V40EYsDu/WZZLmScWjLQriT9H8G2syYsoCa9rWHksDsJwo3+VH2NLImemP471ZPoJJJxSpkPj7DCrXVVoN77bW6fKNW06yo2Bc7sA1U5rcus87yWGMmh8umStGnVPRO6PmTbeMlM9zyRr0TJENA5woQVXkWXXyxzM17kX2LDoyJWX2nkdG6gEpoPuVaOiVIHf+uBSRmzRNdxSdLf8Q4zc6doh8jhv+nac8/F9ohY3OntDTEclEUU/jMat9K6ywkzrW21mG+lVZS6+8AgAAAAAAAFwrAQAAANAAIyldAA0SGQAjAgkADAIMAAwCDAAAAw4bNxQxETQeLRYiNTYvHTgwJBorOSg8GRUqIToSMxggJxcsJSk7DwK17soaAAAAAPJa+EVcDgAAdccdAKhIAADdfA8A+iEFAOoDDwBAbAAA+gMQAPSmFADkvQEAn64DADw8AgBitgAAmnEDAPfeAgAitQEAMTAJAOTLAACRSAAAPU0JAB8KMgkFBgAMEAguDQsHJhMcBDj8dAie381fAI04DAEAAAASaQjZ0y4AAAEJAwPbmAI2AwAAAAABAgAAAPWrHgAAAAAAAAICAAAA9aseAAAAAABI539chEWCqCASQSk/vsUSDEWIlFb5NJ8r4Yd/59hItKKVRFQU1Ps2W7phI3U23Z+PdLuGHVgbfuslO3HWGooH"
+    }
+  }
+}
