@@ -1,0 +1,51 @@
+{
+  "capturedAt": "2026-09-22T20:27:25.288Z",
+  "cluster": "mainnet",
+  "contextSlot": "449486147",
+  "description": "A real Squads v4 proposal to upgrade a program. Transaction 43qBeNMh... (slot 449434309) runs vaultTransactionCreate + proposalCreate + proposalApprove for multisig DQnoxvJiAYUeB5Ahp5VbsaMGMmJUA5Jr5b1nnJ2ANeMG, index 4; its embedded transaction message is a single BPF Upgradeable Loader Upgrade. The resulting VaultTransaction account 5mcdmy4tqDJSwG5a6yWXYW12YZv5s44AVM8f6XqfrkbZ (executed in s1dtzvfL..., slot 449484640, not closed), its Proposal and the multisig are captured live, so decoding the raw creation transaction can be cross-checked against decoding the stored on-chain message. Also includes 5xtxNM6Y... (slot 449484576), an unrelated direct top-level loader Upgrade.",
+  "accounts": {
+    "5mcdmy4tqDJSwG5a6yWXYW12YZv5s44AVM8f6XqfrkbZ": {
+      "dataBase64": "qPqiZFEOos+4ZGYhbRQrK4sc0gJWwFmCLU8G0qvB9PMdGETvcAUjA159pKbIuCFlaE/lXz3mqpUkAZj+ocs/LrjEcwVV3yHUBAAAAAAAAAD9AP8AAAAAAQAECAAAAMdRgW+NjGw4H7iHOBJEo8SrG5CPs6kWD5ad6bayqLvWp+xnsj5FreVwA/aDjqPt58tpK9tGCRFvEBVMoCte3ZMGkl4eA3Ch89bGHz7dUI/fRp1yx+8+2LIK5+zTKc8V5u2kUBW5pynz6CTWkDsIvHLTkAb2io1i5FyarLaHzYtIyWJKDgLteZ6PpxhH0s3XKzm2W3Sjtssf4syExC+n6dACqPaRToihsOIQFT73Y64rAMK5PRbBJNLAU3oQBIAAAAan1RcZLFxRIYzJTD1K8X9Y2u4Im6H9ROPb2YoAAAAABqfVFxjHdMkoVmOYaR1etoteuKObS21cc1VbIQAAAAABAAAABQcAAAABAgMEBgcABAAAAAMAAAAAAAAA",
+      "executable": false,
+      "lamports": "2570480",
+      "owner": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+      "space": "378"
+    },
+    "8J85notd3QFMApMVqfbXSaPt6zmrsm4gxDX2qE87NsJj": {
+      "dataBase64": "Gl69u3SINSG4ZGYhbRQrK4sc0gJWwFmCLU8G0qvB9PMdGETvcAUjAwQAAAAAAAAABRDjsmoAAAAA/wIAAABefaSmyLghZWhP5V895qqVJAGY/qHLPy64xHMFVd8h1IojJUkLNu3NjR1b8mzxkfu7so2uit3/tt9L2IXk56QCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "executable": false,
+      "lamports": "2956560",
+      "owner": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+      "space": "454"
+    },
+    "DQnoxvJiAYUeB5Ahp5VbsaMGMmJUA5Jr5b1nnJ2ANeMG": {
+      "dataBase64": "4HR5ukShT+wDomowZdTQOcOhhBBAeYOMLTojz8vziDXtMV8870E6mgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAABAAAAAAAAAAAAAAAAAAAAAD/BAAAAEmfR3JpHxLKzx3lJcpg0qfwuZgbt8ddE55mNPIcKdieB159pKbIuCFlaE/lXz3mqpUkAZj+ocs/LrjEcwVV3yHUB4ojJUkLNu3NjR1b8mzxkfu7so2uit3/tt9L2IXk56QCB7B/EcIDRihyUrfX+RCwwz+1e1p5a6AY5atawLc7KrDSBwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "executable": false,
+      "lamports": "2728320",
+      "owner": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+      "space": "264"
+    }
+  },
+  "transactions": {
+    "43qBeNMhT4zbtbQd7BSDughU2GumtPJUSu7EYUt2u6DvDoxpb1rYVukef9eHLzAA3xUSgcHSDiHtt9DN46Fk2h9z": {
+      "blockTime": "1790094922",
+      "err": null,
+      "loadedAddresses": {
+        "readonly": [],
+        "writable": []
+      },
+      "slot": "449434309",
+      "transactionBase64": "Aph9/AYTRHsMgUKLs/C7SmkLF/jkTpUyMO1RUVAi16h28Xh+7xlZUbdk5O0wRdQZSF54djgmakope1XgcDFYPgHQWHUJ1ukTrE/zA3azPG1FhWUDwPfhPSNqqj8c8i7GheAgbR6QECliMCuHaj/4TzT6RPD8UkXictDigrhCuS8FAgADCMliSg4C7Xmej6cYR9LN1ys5tlt0o7bLH+LMhMQvp+nQXn2kpsi4IWVoT+VfPeaqlSQBmP6hyz8uuMRzBVXfIdRG3JhI0FwiA5csTFtodVeZsKvQ/RE4DRI/fC/wWAJI6GxksMdFDOp5hQ17STI5O1wX4oiypjgkpId6/ok9Lw5UuGRmIW0UKyuLHNICVsBZgi1PBtKrwfTzHRhE73AFIwMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMGRm/lIRcy/+ytunLDm+e8jOW7xfcSayxDmzpAAAAABoHEzkfiI2i4sVVeyIevCS78fvu2bKP1L79o1Kyct6jc8HCj8HAs80oaUvb4A9ThUhvYmCiM8/3VRc3ZyGceIAQGAAUCvh4BAAcFBAIBAAWkAjD6TqjQ4trTAAAVAQAAAQAECMdRgW+NjGw4H7iHOBJEo8SrG5CPs6kWD5ad6bayqLvWp+xnsj5FreVwA/aDjqPt58tpK9tGCRFvEBVMoCte3ZMGkl4eA3Ch89bGHz7dUI/fRp1yx+8+2LIK5+zTKc8V5u2kUBW5pynz6CTWkDsIvHLTkAb2io1i5FyarLaHzYtIyWJKDgLteZ6PpxhH0s3XKzm2W3Sjtssf4syExC+n6dACqPaRToihsOIQFT73Y64rAMK5PRbBJNLAU3oQBIAAAAan1RcZLFxRIYzJTD1K8X9Y2u4Im6H9ROPb2YoAAAAABqfVFxjHdMkoVmOYaR1etoteuKObS21cc1VbIQAAAAABBQcBAgMEBgcABAADAAAAAAAHBQQDAQAFEdw8SeAebE+fBAAAAAAAAAAABwMEAQMJkCWkiLzYKvgA"
+    },
+    "5xtxNM6YF1NcARP6muAtv4xLzqv5TPtaE5BLhpSbQLwkZnvwwfCvr4hXrUWNbys1Bm61HjBjeewiCB88TVBrHQqT": {
+      "blockTime": "1790108414",
+      "err": null,
+      "loadedAddresses": {
+        "readonly": [],
+        "writable": []
+      },
+      "slot": "449484576",
+      "transactionBase64": "AfhFN9Z54ekZDfG35t3fquH4Dn60YIRJ8Z3NchggfG++YHuBZn5MMqW72+g1XdXt0WxJlzzi6W1bafcAFJAPgQYBAAQI0Qt8hCXTnIBnMfG9SGX9LCGFrLdQYlfUEsMyL+E37IU9YLfxphdRIVzTI+LApZSzK+OKnHX5TGtkz40RdxcOn2c9idWB8H7qwOPGoCdgpu8L+dejgBZYpdGHJJg6xh++caYYmDLGYMy8dZrWHKnNPDir6GU0N5nTEe1jsNqNVH0CqPaRToihsOIQFT73Y64rAMK5PRbBJNLAU3oQBIAAAAMGRm/lIRcy/+ytunLDm+e8jOW7xfcSayxDmzpAAAAABqfVFxjHdMkoVmOYaR1etoteuKObS21cc1VbIQAAAAAGp9UXGSxcUSGMyUw9SvF/WNruCJuh/UTj29mKAAAAANKR+GhDTfTsWzAESY2mkwEXbD2GIfYOuiKFB4RfhGYLAwQHAQIDAAcGAAQDAAAABQAJA9AHAAAAAAAABQAFAm4KAAA="
+    }
+  }
+}

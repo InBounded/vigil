@@ -1,0 +1,31 @@
+{
+  "capturedAt": "2026-09-22T20:27:12.877Z",
+  "cluster": "mainnet",
+  "contextSlot": "449486108",
+  "description": "v0 transaction (slot 449484286) that creates, approves, executes and closes a Squads v4 vault transaction in one go (multisig FXZy1wwuc..., index 3236). The outer message uses address lookup table C4X9vTAXQ7HUzbK5iYMYBF6Ptgy4Uy54BXKXTZ7iAH8T, and so does the embedded Squads transaction message (its token/system program IDs come from the table). The table's current state is captured alongside; tables are append-only, so the indices used then still resolve to the same addresses. Used for raw-transaction mode, recursive embedded-message decoding and lookup-table resolution tests.",
+  "accounts": {
+    "C4X9vTAXQ7HUzbK5iYMYBF6Ptgy4Uy54BXKXTZ7iAH8T": {
+      "dataBase64": "AQAAAP//////////NHWcFgAAAAA9AYA2ArLoQ+sXpufrMlSz1NEtj2u2/TICiolUzQcG+6noAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqYyXJY9OJInxuz0QKRSODYMLWhOZ2v8QhASOe9jb6fhZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGodgXkTdUKpg0N73+KnqyVX9TXIp4citopJ3AAAAAAAah2BelAgULaAeR5s5tuI4eW3FQ9h/GeQpOtNEAAAAABqfVFxk1hND+7ZuzQx0TIGvlRCgbV7hWbMU3X/QAAAAGp9UXGSxcUSGMyUw9SvF/WNruCJuh/UTj29mKAAAAAAan1RcYx3TJKFZjmGkdXraLXrijm0ttXHNVWyEAAAAAC7wPwLtHyi90xBEulKsTz6PGNOXcF+rLA80aI81+eHwJKhPulcQcugimf1rGfo334doRYl4dZBN/j08jgwN/FAn32s2AO194IyaTsq21kzSUFrHHAcpH4/sBvpwNe5VrDDrYvR1hMwz3+KQq1sfPgd94nEYgY2wGByTGNjU6D/cGgGV2lsuN5uUx3Bj92Wd5XxoemQsw5hWYXIPPAXMiMwabiFf+q4GE+2h/Y0YYwDXaxDncGus7VZig8AAAAAABDQmPBuluhj6U+ahEq5a5xIY5lvbxK/dfcvxJdWG+m7DTfdqDX9H/vy+Ywu2r5EuVB/GQSZEtfuh6VcnGcfk1jMdLpxKMuO83JP5xmJGkhEE4/xYHUTOSO3Rgf6H/zWu298zctm5MTPLYLOJPJf4Pe/tfFHKJ3BL+WPmf59tqnwMJvMq77o6DSB+tUMLHV1BhRPT9C4JB4ssXVNyjcUU8+w2GAp59h8Yl/LhTQZHwl+enz3lX/T5Roke0+HOeSQTj3pG7UDR0bmI7+za3Pa4ipIO3zyfSrYP6jHgFpsxgK8YqUQh0J5rZKXnJQD7UoekSinocwXi5yUo3rKoMuc272UE6Hcu+M80u1Uxy3oksWhpzC9bgkrQu9uf7ddGnys17GTLUT2X4MDSRBhdwMzJ/V/ClOxFWx0qeEkvfkyFPYO/KvUqRKRf0alKsqJTt8k4Ky7YNgu3i9qC30MtiePqfrp198C4HmxhgW9gJg6Kua4oT1ZKai8x8DFJ3s+TjwaXUgkcRZ9HamF7viSO1/GItLbNpUvXCYlTICV8uuQPzEaiy3g6ScVqXsQPMH67nSzFMAjcGAfdiDtP/sJZmkLooDAMGRm/lIRcy/+ytunLDm+e8jOW7xfcSayxDmzpAAAAAis19custaFvK3YS/NUiG5t3rV4ortWqYme4hPAbBU+XvR2WQ92FVgBBw0VKEE3lkk1wAnyD/5w4YEYO2bFUROQlU276eyWDJinopP+ITNpZv4YDRUa5LgXlWH4mFSlP2Sj7vSwPIKnFZnqB6Fu5Lz23OMTV9hGCyrBvUw6mGDJ1UX6MOo7w/PClm2otsPf7406t9pXygIypU5KAmT//DwuawdkWAUUAjj24Rwt97Jgmqpeokv776D3D4jjIrZx8PBBgg+dXZMSCd77R5QFRd/T04sp5nuFIuWTBUtAwFlRCrThINu2CodPEAB4uvSKg/+O3AQUwY/6Q0pkYKjmmD4ReSSDtsiiqHt0cdgU+Vkfk5XIQKnOPZ9NW6fTpLinSeBGe5hgXO2ckwLfzmtTdOzy3SNXQw2J4D4DcbCm2s2jD53M5WiVtZ1txyWmiYn7/IXJ7naCii07XNe/VgN7Q+Lsy3xpWPA/Pp1GfkQjwaxq3rB7BfPBWigujgMxXAX1Z3ZU39K6ZeWeoFlWkQohHuC5H/jrDLZtvLILf+mGdFqhAHBzEtHUHacfD7KAwWYs1l6+suCFnAy64/29yybIbgrwphU6X5qLMBxyHKvwn7PFJkztSJNKzRewl3VlzFsS8NrfASHOfu/6vbkusm6lBjUbFmDv6/0coYGARdSunVm4JBd7Gzr+uquWLzalby5JexfzRcUqmAcvnX0UY1nmuRNn4XAskDe6KnOB2fuc5t8V0PxU10u3MRn4rxLxkMDhW+FS5xOqS/Q1TaEhpOh9UP4uCkNsgG6KneBNMRFeGvrlb7oLFE/1HX2eAS2eKdtwsVrZNT4Jaq4VaNhBcSaMhoqfCSNT65qiNgQmSKRe+RwkJQjATuy/oqTn0eEzPs4gowBoHE17McjA0TPDnuC8KhkU0vknUp0dzDQpWCU9LzLXgEsqyxEljM42gsQYuocv89+RECcS8VrxK2vmmzQ1sACATZCvHbiTnsNf+U2WQNV9zDJ5S7Phu2b9OuhJqE3NuUuo1E6zPYtRVZ7uljWJ7fuxEbzjZHy9zMuaP7+Fnqvr0g1rNdLyNZocV2xWovUvtrG2axbRmuLucFTmPkkhBxKZYvCdjxBL27L8p1ajsB2hBqbkuO54fyWRoJv+1/HLB0xvp6877brTo9ZfNqq8l0MbG75MLS9uDkfKYCA0UvXWE+5RNNNmioxFxkRlKWxyS5e0XZGfqOwfY93nulXLwj/Q/abOn2YZjdhw2KmG8wZ1xG+D4vUoNIeVL11QVj4+96s8qJb92ecxmibgbN+a1f7k4j8km7QGfInVtgKs0i4GxmeujUWFWpdVBTSSyASh5w0QBYGag6K+J2mxkNDS3hEkA9F18/15OxViEa7TOUsm4h6+wGLNqJSlgBnXYK5bZz",
+      "executable": false,
+      "lamports": "15089280",
+      "owner": "AddressLookupTab1e1111111111111111111111111",
+      "space": "2040"
+    }
+  },
+  "transactions": {
+    "4VM1xbEnopeLaBGsw4MryHNTyek4nr58Rq4De1AssUVpCktwfXxqyhbgXAiioALSgFt799XbT3dKsp8WmC4fLqdn": {
+      "blockTime": "1790108336",
+      "err": null,
+      "loadedAddresses": {
+        "readonly": [
+          "11111111111111111111111111111111",
+          "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+          "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        ],
+        "writable": []
+      },
+      "slot": "449484286",
+      "transactionBase64": "A65+p46wHrBT7QZcUzC69rRoRpqod/GUmbGxbVZfhnuzNuudNuq5PnlrIGVZBUd2eKwE1fER85gZIylXg/4A8w3agcbPPsSUFzY1pQLUj8XOCt3g+DSMF9OWpVbaBdkY5VdbraqiMrBHOrSez2d4lEEEQfrx90UnmcF+VarjTFALm0UVFykeAEQb+yNxwDlfRBf57OTPEHyRRWoxAdkpWzjJ+nCh1RQMKNmYPvwDFbT6Wr0im3iI5BBuMtyE28VPCIADAAUPERQxrNx6qFNojULXfuPzbkQmAsck4/2vZwUl9wY6NOmUGnw/u5InWNvK12NTA28fJNKh7Pt7tCvBBR6+T57Dw6gb2aGWI/XjU2VYs8hFby/4F0jh+Gb7lrf7f4k2AcmLA7ix8g7erdvzLYi2P4Isx31I9HikByDm72KiamwD88oIeCIYbhrsBiS9Zq2qgMqFBn2qc0eFupiAVjc4WCg70A8xaMhIw+YHpUYlg8aNhpnIrLLLMpQpIuP+5D7hVEwkWKn/gFyoPRHFFG/WsfF67YVdjC40HqUVk/Kk6eUA1cp0kjUOAZXCN6Bsmxw24tqopbBUhZu0no50QhiMs1K3jo0zXxhOWsk0Vyuh/grKYwsa5Nel4OO/H2uzTobmTAZipgeXtNoufXzsOjv/6wQ8ziFyFt7d1J5eldBkksw6kUME3615Yv+x3ZJdCp+15tAM5hlbqLs6kf0H75hgxel7uAaBxM5H4iNouLFVXsiHrwku/H77tmyj9S+/aNSsnLeoStYjXrmXbmmLA5GdFEv01OEHaokDDUL3TBLhEq+49QWkV2TGQ9KJWAFuw8mmfPG7arlRV7dyakoTj1/63MUbqL+uPRyYQDF9J1ZB+Z2pAjfQ+tCOlUxhn3L5RpggXjSL3yaCLWbWZSyltvtmpklie3RJ4A7xIueGr8lezzhGQe0HCgUKDwAICgcAAP4AAgEBCwUDBQEAD5cCMPpOqNDi2tMAAAgBAAACAgIGdJI1DgGVwjegbJscNuLaqKWwVIWbtJ6OdEIYjLNSt44RFDGs3HqoU2iNQtd+4/NuRCYCxyTj/a9nBSX3Bjo06Qh4IhhuGuwGJL1mraqAyoUGfapzR4W6mIBWNzhYKDvQpgeXtNoufXzsOjv/6wQ8ziFyFt7d1J5eldBkksw6kUNK1iNeuZduaYsDkZ0US/TU4QdqiQMNQvdMEuESr7j1Bb+uPRyYQDF9J1ZB+Z2pAjfQ+tCOlUxhn3L5RpggXjSLAggGAQIEBQYHAQABBwQDBQIACgAMUIp1AgAAAAAJAaRXZMZD0olYAW7DyaZ88btquVFXt3JqShOPX/rcxRuoAAMCAAEACwUDBgEADxHcPEngHmxPn6QMAAAAAAAAAAsDAwEGCZAlpIi82Cr4AAsDAwIGCZAlpIi82Cr4AAsOAwYFAQ0HAAQJDA4PEBEIwgihV5mkGasLBQMGBQAPCMRHu7ACI6qlAaRXZMZD0olYAW7DyaZ88btquVFXt3JqShOPX/rcxRuoAAMCAAE="
+    }
+  }
+}
