@@ -123,8 +123,17 @@ async function main(): Promise<void> {
   const outDir = values["out-dir"] ?? defaultFixturesDir();
   await mkdir(outDir, { recursive: true });
   const outPath = path.join(outDir, `${values.name}.json`);
-  await writeFile(outPath, `${JSON.stringify(fixture, null, 2)}\n`, "utf8");
+  await writeFile(outPath, `${JSON.stringify(fixture, bigintAsString, 2)}\n`, "utf8");
   console.log(`\nWrote ${outPath}`);
+}
+
+/**
+ * JSON has no bigint. kit returns some RPC values as bigint even inside untyped fields — e.g. a
+ * failed transaction's `meta.err` (`{ InstructionError: [0, { Custom: 7n }] }`) — so they are
+ * written as decimal strings, matching how this file already stores slots and lamports.
+ */
+function bigintAsString(_key: string, value: unknown): unknown {
+  return typeof value === "bigint" ? value.toString() : value;
 }
 
 function splitList(value: string | undefined): string[] {
