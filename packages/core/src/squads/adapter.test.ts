@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import { address } from "@solana/kit";
 import { describe, expect, it } from "vitest";
 import { FixtureRpcClient } from "../rpc/fixture-client.js";
 import { loadFixtureFile } from "../rpc/fixture-file.js";
@@ -9,8 +10,8 @@ function fixturePath(name: string): string {
   return fileURLToPath(new URL(`../../../../fixtures/${name}.json`, import.meta.url));
 }
 
-const MULTISIG_MIXED_PERMISSIONS = "3gjeSqMDqip2uLALaeFoGN3PmNx1tuY1y6S9qVxLyVJt" as const;
-const CONFIG_TRANSACTION_MULTISIG = "4AUG3JkY43g39avoD5e66BVKCj5RDZRGQoKgGyNcDJnx" as const;
+const MULTISIG_MIXED_PERMISSIONS = address("3gjeSqMDqip2uLALaeFoGN3PmNx1tuY1y6S9qVxLyVJt");
+const CONFIG_TRANSACTION_MULTISIG = address("4AUG3JkY43g39avoD5e66BVKCj5RDZRGQoKgGyNcDJnx");
 
 describe("SquadsV4Adapter.fetchMultisig, against real captured data", () => {
   it("decodes the multisig-mixed-permissions fixture correctly", async () => {
@@ -44,9 +45,9 @@ describe("SquadsV4Adapter.fetchMultisig, against real captured data", () => {
     const data = await loadFixtureFile(fixturePath("multisig-mixed-permissions"));
     const adapter = new SquadsV4Adapter(new FixtureRpcClient(data));
 
-    await expect(adapter.fetchMultisig("11111111111111111111111111111111")).rejects.toThrow(
-      NotASquadsMultisigError,
-    );
+    await expect(
+      adapter.fetchMultisig(address("11111111111111111111111111111111")),
+    ).rejects.toThrow(NotASquadsMultisigError);
   });
 
   it("throws NotASquadsMultisigError for an account that exists but isn't owned by the Squads v4 program", async () => {
@@ -57,7 +58,7 @@ describe("SquadsV4Adapter.fetchMultisig, against real captured data", () => {
     const adapter = new SquadsV4Adapter(new FixtureRpcClient(data));
 
     await expect(
-      adapter.fetchMultisig("MwXvLTjbQFFy5fMt5q9cU9HC92huDiriAk6KQUS6VLG"),
+      adapter.fetchMultisig(address("MwXvLTjbQFFy5fMt5q9cU9HC92huDiriAk6KQUS6VLG")),
     ).rejects.toThrow(NotASquadsMultisigError);
   });
 });

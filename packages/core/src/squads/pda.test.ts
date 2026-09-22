@@ -1,3 +1,4 @@
+import { address } from "@solana/kit";
 import { PublicKey } from "@solana/web3.js";
 import * as sqds from "@sqds/multisig";
 import { describe, expect, it } from "vitest";
@@ -14,9 +15,9 @@ import {
 
 // A real, on-chain Squads v4 multisig (see fixtures/multisig-mixed-permissions.json) and some
 // arbitrary valid addresses, reused across cases below.
-const MULTISIG = "3gjeSqMDqip2uLALaeFoGN3PmNx1tuY1y6S9qVxLyVJt" as const;
-const CREATE_KEY = "By8ZMDk9pt3sY2vuKiwcYhzrTTH8bw648iH8nmbnh5wY" as const;
-const TRANSACTION_PDA = "MwXvLTjbQFFy5fMt5q9cU9HC92huDiriAk6KQUS6VLG" as const;
+const MULTISIG = address("3gjeSqMDqip2uLALaeFoGN3PmNx1tuY1y6S9qVxLyVJt");
+const CREATE_KEY = address("By8ZMDk9pt3sY2vuKiwcYhzrTTH8bw648iH8nmbnh5wY");
+const TRANSACTION_PDA = address("MwXvLTjbQFFy5fMt5q9cU9HC92huDiriAk6KQUS6VLG");
 
 const U64_MAX = 2n ** 64n - 1n;
 const U32_MAX = 2 ** 32 - 1;

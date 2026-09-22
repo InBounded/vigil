@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import { address, signature as toSignature } from "@solana/kit";
 import { describe, expect, it } from "vitest";
 import { FixtureRpcClient } from "./fixture-client.js";
 import { loadFixtureFile, loadFixtureFiles } from "./fixture-file.js";
@@ -13,9 +14,9 @@ describe("loadFixtureFile against real captured fixtures", () => {
   it("loads the multisig-mixed-permissions fixture and serves it via FixtureRpcClient", async () => {
     const data = await loadFixtureFile(fixturePath("multisig-mixed-permissions"));
     const rpc = new FixtureRpcClient(data);
-    const address = "3gjeSqMDqip2uLALaeFoGN3PmNx1tuY1y6S9qVxLyVJt" as const;
+    const multisig = address("3gjeSqMDqip2uLALaeFoGN3PmNx1tuY1y6S9qVxLyVJt");
 
-    const result = await rpc.getAccountInfo(address);
+    const result = await rpc.getAccountInfo(multisig);
     expect(result.value).not.toBeNull();
     expect(result.value?.owner).toBe(SQUADS_V4_PROGRAM);
     expect(result.value?.lamports).toBeGreaterThan(0n);
@@ -26,10 +27,10 @@ describe("loadFixtureFile against real captured fixtures", () => {
     const data = await loadFixtureFile(fixturePath("vault-transaction"));
     const rpc = new FixtureRpcClient(data);
     const addresses = [
-      "3gjeSqMDqip2uLALaeFoGN3PmNx1tuY1y6S9qVxLyVJt",
-      "MwXvLTjbQFFy5fMt5q9cU9HC92huDiriAk6KQUS6VLG",
-      "5Y3bXvwEj3pSWDJV3LzDJNKEFcyeMBZe16ijD53RkSE7",
-    ] as const;
+      address("3gjeSqMDqip2uLALaeFoGN3PmNx1tuY1y6S9qVxLyVJt"),
+      address("MwXvLTjbQFFy5fMt5q9cU9HC92huDiriAk6KQUS6VLG"),
+      address("5Y3bXvwEj3pSWDJV3LzDJNKEFcyeMBZe16ijD53RkSE7"),
+    ];
 
     const result = await rpc.getMultipleAccounts(addresses);
     expect(result.value).toHaveLength(3);
@@ -42,8 +43,9 @@ describe("loadFixtureFile against real captured fixtures", () => {
   it("loads the config-transaction fixture's historical transaction, whose account is now closed", async () => {
     const data = await loadFixtureFile(fixturePath("config-transaction"));
     const rpc = new FixtureRpcClient(data);
-    const signature =
-      "2HU86rfvwQUVoHtBVD2APHY9uEWk5RCw4tceTM8h2NHUzVxm6YAMQSLa5tTd4AWJjgNnUy1f79ndPGZzucQt3Zz1" as const;
+    const signature = toSignature(
+      "2HU86rfvwQUVoHtBVD2APHY9uEWk5RCw4tceTM8h2NHUzVxm6YAMQSLa5tTd4AWJjgNnUy1f79ndPGZzucQt3Zz1",
+    );
 
     const tx = await rpc.getTransaction(signature);
     expect(tx).not.toBeNull();
@@ -52,15 +54,18 @@ describe("loadFixtureFile against real captured fixtures", () => {
 
     // The multisig account was still live at capture time, even though its ConfigTransaction/
     // Proposal were closed in the same atomic transaction.
-    const multisig = await rpc.getAccountInfo("4AUG3JkY43g39avoD5e66BVKCj5RDZRGQoKgGyNcDJnx");
+    const multisig = await rpc.getAccountInfo(
+      address("4AUG3JkY43g39avoD5e66BVKCj5RDZRGQoKgGyNcDJnx"),
+    );
     expect(multisig.value?.owner).toBe(SQUADS_V4_PROGRAM);
   });
 
   it("loads the second config-transaction fixture the same way", async () => {
     const data = await loadFixtureFile(fixturePath("config-transaction-2"));
     const rpc = new FixtureRpcClient(data);
-    const signature =
-      "3w38dUfnzfheZaxPwjBmqcABue8RBvNx1EthKS55u8JXZXxzMcAqnbZ5zbiQNBeQkGtefYsqdhDj1fwPzG6RBgr1" as const;
+    const signature = toSignature(
+      "3w38dUfnzfheZaxPwjBmqcABue8RBvNx1EthKS55u8JXZXxzMcAqnbZ5zbiQNBeQkGtefYsqdhDj1fwPzG6RBgr1",
+    );
 
     const tx = await rpc.getTransaction(signature);
     expect(tx).not.toBeNull();
@@ -73,14 +78,14 @@ describe("loadFixtureFile against real captured fixtures", () => {
       fixturePath("vault-transaction"),
     ]);
     const rpc = new FixtureRpcClient(data);
-    const result = await rpc.getAccountInfo("MwXvLTjbQFFy5fMt5q9cU9HC92huDiriAk6KQUS6VLG");
+    const result = await rpc.getAccountInfo(address("MwXvLTjbQFFy5fMt5q9cU9HC92huDiriAk6KQUS6VLG"));
     expect(result.value).not.toBeNull();
   });
 
   it("resolves an address absent from the fixture to null, like a real RPC would", async () => {
     const data = await loadFixtureFile(fixturePath("multisig-mixed-permissions"));
     const rpc = new FixtureRpcClient(data);
-    const result = await rpc.getAccountInfo("11111111111111111111111111111111");
+    const result = await rpc.getAccountInfo(address("11111111111111111111111111111111"));
     expect(result.value).toBeNull();
   });
 });

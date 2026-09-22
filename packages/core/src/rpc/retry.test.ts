@@ -2,7 +2,10 @@ import { SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR, SolanaError } from "@solana/ki
 import { describe, expect, it, vi } from "vitest";
 import { withRetry } from "./retry.js";
 
-function httpError(statusCode: number, headers: HeadersInit = {}): SolanaError {
+function httpError(
+  statusCode: number,
+  headers: ConstructorParameters<typeof Headers>[0] = {},
+): SolanaError {
   return new SolanaError(SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR, {
     headers: new Headers(headers),
     message: "boom",
