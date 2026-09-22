@@ -32,6 +32,10 @@ It exists as an independent second opinion. If the official signing interface is
 
 This project is in early, phase-by-phase development. See [`AGENTS.md`](AGENTS.md) for the working rules and full project specification, and [`docs/architecture.md`](docs/architecture.md) for the current design.
 
+### Known limitations
+
+- **v1 transactions ([SIMD-0385](https://github.com/solana-foundation/solana-improvement-documents)) and RPC endpoints.** Vigil decodes legacy, v0 and v1 transactions, and asks the RPC for v1. If an RPC endpoint rejects that request, Vigil falls back to legacy/v0 for that endpoint and reports that v1 transactions can't be read through it — the analysis is then marked incomplete, never clean. Use an endpoint that supports v1 to avoid this.
+
 ## License
 
 [Apache License 2.0](LICENSE).
