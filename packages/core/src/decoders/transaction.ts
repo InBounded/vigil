@@ -27,8 +27,9 @@ const BASE64_PATTERN = /^[A-Za-z0-9+/]*={0,2}$/;
  * `getTransaction(..., { encoding: "base64" })`), resolves its lookup tables and decodes every
  * instruction, recursing into Squads proposal-creation messages. Nothing is signed or sent.
  *
- * v1 messages (`@solana/kit` 8.3.0 can decode them) are rejected: no real v1 transaction was
- * available to test against, and `AGENTS.md` forbids shipping untested decoders.
+ * v1 messages (SIMD-0385; `VersionedMessage::V1` in anza-xyz/solana-sdk, live on mainnet — see
+ * `docs/DECISIONS.md`) are rejected for now: the RPC client cannot fetch them yet, so no real v1
+ * transaction could be captured to test against, and `AGENTS.md` forbids untested decoders.
  */
 export async function decodeRawTransaction(
   rpc: RpcClient,

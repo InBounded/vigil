@@ -193,3 +193,29 @@ Found by walking `getSignaturesForAddress` on the Loader, Squads, Token-2022, Me
 Lookup tables were captured at capture time, after the transactions that used them. This is sound because tables are append-only (existing entries never change) — and it is verified, not assumed: tests assert our resolution equals the cluster's own `meta.loadedAddresses` for both v0 transactions that have it.
 
 **Not found in real data** (covered only by cross-checks against the official client's encoders and the program source): any Token-2022 authority change (`SetAuthority`, extension updates, metadata/group authority), any Token or Token-2022 `Batch`, loader `SetAuthority`/`SetAuthorityChecked`/`Close`/`ExtendProgram`, Stake `Authorize*`/`Merge`/`Split`, and Squads `configTransactionCreate` embedded config actions. Recent Token-2022 activity is largely v1 transactions, which the Phase 2 RPC client cannot fetch (see the raw-mode entry above).
+
+## 2026-09-22 — Evidence for v1 transactions (maintainer challenged the claim)
+
+The maintainer questioned whether a transaction version 1 exists (understanding: only legacy and v0). Evidence gathered on 2026-09-22; the earlier claim stands and is **not** retracted:
+
+- **Official source**: `anza-xyz/solana-sdk` at commit `43339f080f1264e017b0a917dd87dfbe82ca4e95`, `message/src/versions/mod.rs`: `pub enum VersionedMessage { Legacy(LegacyMessage), V0(v0::Message), V1(v1::Message) }`, deserialized when the prefix byte is `0x80 | 1`. `message/src/versions/v1/message.rs` line 1: "Core Message type for V1 transactions (SIMD-0385)"; its doc comment: "A V1 transaction message (SIMD-0385) supporting 4KB transactions with inline compute budget". `@solana/kit@8.3.0` also ships `V1CompiledTransactionMessage`.
+- **Real mainnet signature**: `2TYLLmgrBe82yNhbQo2sZRWE3Zp7bAykig4BqW3Ux3LfcosSpFKYHf9Z75m5RcHhCPdGbmkJ7i9ws5M3TfH1Ea9C` (slot 449506996, a Token-2022 transaction). Queried with plain `curl` against `api.mainnet-beta.solana.com`, independent of kit:
+  - `getTransaction` with `maxSupportedTransactionVersion: 0` → error `-32015` "Transaction version (1) is not supported by the requesting client. Please try the request again with the following configuration parameter: "maxSupportedTransactionVersion": 1".
+  - with `maxSupportedTransactionVersion: 1` → `"version": 1`; the wire bytes begin `0x81` (versioned prefix, version 1), and the transaction is 2,310 bytes, above the legacy/v0 1,232-byte limit.
+
+So `maxSupportedTransactionVersion: 0` covers legacy and v0 but **not** v1. The base64-mode error message ("v1 transaction messages are not supported yet") is accurate and unchanged; its source comment now cites SIMD-0385. The discrepancy with `docs/reference.md` (which does not mention v1) stays recorded. Supporting v1 still needs the maintainer's decision, because it requires changing the Phase 2 RPC client.
+
+## 2026-09-22 — Test files are now typechecked by `pnpm check`
+
+Every workspace package's `tsconfig.json` excludes `src/**/*.test.ts` (so tests aren't compiled into `dist/`, see the Phase 1 entry), and Vitest does not typecheck, so type errors in tests went unnoticed. Each package now has a `tsconfig.test.json` (extends `tsconfig.json`, `noEmit`, includes the tests) and its `typecheck` script runs both configs. Verified by adding a deliberately ill-typed test file: `pnpm typecheck` exited 1 naming it; the probe was then deleted.
+
+Turning the gate on surfaced 23 errors in Phase 2 tests (`rpc/fixture-file.test.ts`, `rpc/retry.test.ts`, `squads/adapter.test.ts`, `squads/pda.test.ts`), not only the one file reported in the Phase 3A delivery. All were typing-only: string literals passed where kit's branded `Address`/`Signature` types are required (fixed with kit's `address()`/`signature()`, which also validate the string at runtime), and a DOM-only `HeadersInit` type not in the ES2023 lib (replaced with `ConstructorParameters<typeof Headers>[0]`). No test's assertions or data changed.
+
+## 2026-09-22 — Items not yet tested on real data must be covered by the Phase 10 devnet e2e
+
+No real mainnet example was found for these during Phase 3A; they are covered only by cross-checks against official clients' encoders and the programs' source. **The Phase 10 devnet end-to-end test must create each of them on devnet and assert Vigil decodes it correctly** (name, arguments, account roles), and the result must be recorded here:
+
+- Token-2022: `SetAuthority` (across authority types, both set and remove), the TransferHook / MetadataPointer / GroupPointer / GroupMemberPointer update instructions, Pausable pause/resume, Token Metadata `UpdateAuthority`, Token Group `UpdateGroupAuthority`.
+- SPL Token and Token-2022 `Batch` (tag 255), including a batch that contains a `SetAuthority`.
+- BPF Upgradeable Loader: `SetAuthority` (including to none), `SetAuthorityChecked`, `Close`, `ExtendProgram`.
+- Stake: `Authorize`, `AuthorizeChecked`, `AuthorizeWithSeed`, `AuthorizeCheckedWithSeed`, `Merge` — in both the legacy (sysvar) and current account layouts.
