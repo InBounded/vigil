@@ -49,3 +49,7 @@ Workspace layout, strict `tsconfig` flags, Biome, and Vitest were mandated direc
 - Vitest's monorepo `projects` field (`["packages/*", "apps/*"]`) is used instead of the deprecated `vitest.workspace.ts`, confirmed current as of Vitest 5 via `vitest.dev/guide/workspace`.
 - No runtime dependencies exist yet anywhere in the workspace, satisfying the Phase 1 acceptance criterion; all five pinned packages above are `devDependencies` only.
 - Each package's `tsconfig.json` excludes `src/**/*.test.ts` from the build. Without this, `tsc` compiled `*.test.ts` into `dist/`, which both shipped test code in build output and caused Vitest to pick up the compiled `dist/*.test.js` files as additional test files on a second run (test count doubled from 4 to 8). Caught by actually re-running `pnpm check` twice in a row rather than trusting the first green run.
+
+## 2026-09-22 — @types/node major-version updates ignored in Dependabot
+
+`.github/dependabot.yml`'s `npm` update group now ignores `semver-major` updates for `@types/node`. The pinned `22.20.4` tracks Node 22 (see `.nvmrc`); Dependabot's default `latest` resolution for `@types/node` follows whatever Node major is newest on npm (currently 26.x), which would otherwise propose upgrades to a types package that no longer matches the runtime this project targets.
