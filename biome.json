@@ -40,5 +40,26 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["packages/core/src/squads/generated/**"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noBannedTypes": "off"
+          },
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/core/idl/**", "fixtures/**"],
+      "formatter": {
+        "enabled": false
+      }
+    }
+  ]
 }

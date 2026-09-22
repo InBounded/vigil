@@ -11,5 +11,13 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@solana/kit": "8.3.0",
+    "@solana/program-client-core": "8.3.0"
+  },
+  "devDependencies": {
+    "@solana/web3.js": "1.99.0",
+    "@sqds/multisig": "2.1.4"
   }
 }

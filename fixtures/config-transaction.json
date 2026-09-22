@@ -1,0 +1,27 @@
+{
+  "capturedAt": "2026-09-22T19:40:14.212Z",
+  "cluster": "mainnet",
+  "contextSlot": "449475582",
+  "description": "Historical ConfigTransaction lifecycle for multisig 4AUG3JkY43g39avoD5e66BVKCj5RDZRGQoKgGyNcDJnx (3 members, threshold 2, index 1): create+2 approves+execute+close all in one atomic transaction, so the transaction/proposal accounts no longer exist live. Captured via getTransaction instead of getAccountInfo for exactly that reason; see docs/DECISIONS.md. Also includes the multisig account's current live state.",
+  "accounts": {
+    "4AUG3JkY43g39avoD5e66BVKCj5RDZRGQoKgGyNcDJnx": {
+      "dataBase64": "4HR5ukShT+wtwCYeQKYseMig+Icoe/euPe37DSCOBUUs74UTtfbLHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAQAAAAAAAAAAAAAAAAAAAAGUw06ncO8wnY/oaf3pOfoBsM1u2SHfv4xL9S0ikIxb7P0DAAAACWpAnDZ0+ufnzcTnhGoQd19U4U1TGVnxVOO7ql6VkGsHIKY0ul0QBSUOnaSemdOtEGTjZrd5noIwfvLMzR8x5TUHcxpaiOBgsb3zo4ZBuRDH6cOvHY1VU1riw3NQDrCzX80C",
+      "executable": false,
+      "lamports": "1823720",
+      "owner": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+      "space": "231"
+    }
+  },
+  "transactions": {
+    "2HU86rfvwQUVoHtBVD2APHY9uEWk5RCw4tceTM8h2NHUzVxm6YAMQSLa5tTd4AWJjgNnUy1f79ndPGZzucQt3Zz1": {
+      "blockTime": "1790075222",
+      "err": null,
+      "loadedAddresses": {
+        "readonly": [],
+        "writable": []
+      },
+      "slot": "449360541",
+      "transactionBase64": "BEA30oDXxHJpZZgLNHZgeFCsltE9BYlO9WwgegulLyuk5k69FtCQQ7XTgx8NFCz42UYUKEnsMQRRh/uaKs8tUwrg86rw4uC3/dyHp/DYjjEJhN3vqg++84c6xS1n8z9LzcOPnYFOmnL7+/N+u1iC7R7qnoM2MVlG9evfthuVpSoBxqgMFsz/7maR7WkjXsCIfDoUsHqeg3lgp6jd0ruhjPTrUq1ux4ihTy22GuRh9L3mjimdcFQog9XNKBQJNHxFDTR7q8M+3GLHowqwK2Kvti1NFKDNxSkN5/pGcAYZ1+ohq2tW67nzjJW+bbavGRUWEEqYQp8zBP/McNv3iZ6TugmABAEDDZTDTqdw7zCdj+hp/ek5+gGwzW7ZId+/jEv1LSKQjFvsCWpAnDZ0+ufnzcTnhGoQd19U4U1TGVnxVOO7ql6VkGsgpjS6XRAFJQ6dpJ6Z060QZONmt3megjB+8szNHzHlNS3AJh5Apix4yKD4hyh796497fsNII4FRSzvhRO19ssfLwAcOcVPqYjd8ILGMegmq8BNS8oFq+gS3UohFusQKX0+k9cyxEgkJ5DS27UxpAq9GfFsVeMTLP9Sd63J1pOrWmLaPs5U0rkzUASNGTp6rETFdblqF+ONwaxmcz9DwXTFy50RhMfkIs5xHvHRlHNi48uVe/PfMcqHuNFeRWslEmbZDeaFe7AzekGqThydWYp6K+RB/SaL5sEhC+QQtX+ZTt1vqN3GwSIN2EtywVXb8TRaWLm0dgGpid0YM3Hn/ITQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGgcTOR+IjaLixVV7Ih68JLvx++7Zso/Uvv2jUrJy3qJsauf6XL7JmHF5tDBmzlf/XIIUr9uPjgF2ovoZiGM9NhbQKol+fitpnRLif8ZVh2A6TnMTqIQPWmhmzVzxdPqwICwYMBQQDAAqoATLdx10o9YvpAAIAAwAAAAlqQJw2dPrn583E54RqEHdfVOFNUxlZ8VTju6pelZBrByCmNLpdEAUlDp2knpnTrRBk42a3eZ6CMH7yzM0fMeU1B3MaWojgYLG986OGQbkQx+nDrx2NVVNa4sNzUA6ws1/NAgAAAAABlMNOp3DvMJ2P6Gn96Tn6AbDNbtkh37+MS/UtIpCMW+wBDAAAAHsibiI6IkZ1c2UifQsFBAgBAAqgAZvsV+SJS1EnAQAAAASDlGbjSIEXQR/2+dWlenT+ShTW0Uv6eLbqVxGhmbxPhQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADh9QUAAAAAAQEAAACUw06ncO8wnY/oaf3pOfoBsM1u2SHfv4xL9S0ikIxb7AEAAACUw06ncO8wnY/oaf3pOfoBsM1u2SHfv4xL9S0ikIxb7AALBQQHAQAKEdw8SeAebE+fAQAAAAAAAAAACwMEAQcJkCWkiLzYKvgACwMEAgcJkCWkiLzYKvgACwcEAQcIAAoGCHKS9L38jCQoCwUEBwgACghQy1Q1l3C7ugoCAAkMAgAAAPCSkAAAAAAAAA=="
+    }
+  }
+}

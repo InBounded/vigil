@@ -1,0 +1,27 @@
+{
+  "capturedAt": "2026-09-22T19:40:27.200Z",
+  "cluster": "mainnet",
+  "contextSlot": "449475631",
+  "description": "Second example, same shape as config-transaction.json: historical ConfigTransaction lifecycle for multisig EjtH4Doy78jjRKVCCr35XXVDrG8jdGdivj3f5wAJECQ7 (3 members, threshold 2, index 1), create+2 approves+execute+close atomically in one transaction. Captured via getTransaction since the transaction/proposal accounts are closed; see docs/DECISIONS.md.",
+  "accounts": {
+    "EjtH4Doy78jjRKVCCr35XXVDrG8jdGdivj3f5wAJECQ7": {
+      "dataBase64": "4HR5ukShT+wp+lEL5zxMzZD7JMPgwUGGuoTfnW9TI5Hxl7D4oVJ5jgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAQAAAAAAAAAAAAAAAAAAAAHx+zleH2yBsP3hVZZK8z+Ts9KdJqJfQWmGIStD54mW9v8DAAAAmkSWpHn37ARCiM+JtUMM0+D/jWU+3ufJt8yHcSsTTQIHpN58se3e2tIeKocYml0TISl3bJ6FHFEqGPqZWj1w5aIH1OzGguXo5JFkn5uInCCs9HtmFOmuUIHk+Z3vMw4jgSgC",
+      "executable": false,
+      "lamports": "1823720",
+      "owner": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+      "space": "231"
+    }
+  },
+  "transactions": {
+    "3w38dUfnzfheZaxPwjBmqcABue8RBvNx1EthKS55u8JXZXxzMcAqnbZ5zbiQNBeQkGtefYsqdhDj1fwPzG6RBgr1": {
+      "blockTime": "1790074960",
+      "err": null,
+      "loadedAddresses": {
+        "readonly": [],
+        "writable": []
+      },
+      "slot": "449359566",
+      "transactionBase64": "BJKiG/g46lta7UwDqwR9gfVUnY9dVBzupPN7RWDG8JbAEhCasTrL/hAOPhlZIFvk3VbQ9oPubLPhWHXFJKtEVQZHX0L0aphdl6ALRIHPzYO7Q9ifsEqZU14oMTFulbi5lryiVHE3Y9cDb2xRYDLlSpvwbDqDNk/0r1FcqpcBrCUKrHQJg6gI+0/nYPboyPMBZAaN97DnXUYG8pDPLUHX9AirdeUCksbsBAV3GMweGkMXuoCKgn1sW3TeDQgRrhQyBhRqDzLj/Ll6s64d+cRGJcMLmESoiAeim3ITlo9cAuJeWdijdwtxsdGR/BS1kL3UH3rfShhhG5M8KSsEx/JgUwaABAEDDfH7OV4fbIGw/eFVlkrzP5Oz0p0mol9BaYYhK0PniZb2mkSWpHn37ARCiM+JtUMM0+D/jWU+3ufJt8yHcSsTTQKk3nyx7d7a0h4qhxiaXRMhKXdsnoUcUSoY+plaPXDloin6UQvnPEzNkPskw+DBQYa6hN+db1MjkfGXsPihUnmOD+40bvoY22VulcNTgAYsTbtmhVskrEICnpaOHz4fKLM7S1zGD0Pcs0FyZwa6LFdUCna1m1EFy3GDAG8/RtQgyD6T1zLESCQnkNLbtTGkCr0Z8WxV4xMs/1J3rcnWk6tazCRNi2es/vANMRicVRqQP9r/Dc/Jt8sEF0z1BWdbQADNmMfH9f1LkGbyOm/XouezcpnYKsUjJuhNfyYLbcyxHN1vqN3GwSIN2EtywVXb8TRaWLm0dgGpid0YM3Hn/ITQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGgcTOR+IjaLixVV7Ih68JLvx++7Zso/Uvv2jUrJy3qJsauf6XL7JmHF5tDBmzlf/XIIUr9uPjgF2ovoZiGM9N0bnQ2kx9XCSj/YzmK13hrNW1qz6GNMZOgA5IV7GDwH0ICwYMBgcDAAqoATLdx10o9YvpAAIAAwAAAJpElqR59+wEQojPibVDDNPg/41lPt7nybfMh3ErE00CB6TefLHt3trSHiqHGJpdEyEpd2yehRxRKhj6mVo9cOWiB9TsxoLl6OSRZJ+biJwgrPR7ZhTprlCB5Pmd7zMOI4EoAgAAAAAB8fs5Xh9sgbD94VWWSvM/k7PSnSaiX0FphiErQ+eJlvYBDAAAAHsibiI6IkZ1c2UifQsFBwQBAAqgAZvsV+SJS1EnAQAAAAQeSOaY6nI0r8UkIck5XQrwe2BLaJGHtgrCuB64NoWEMQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADh9QUAAAAAAQEAAADx+zleH2yBsP3hVZZK8z+Ts9KdJqJfQWmGIStD54mW9gEAAADx+zleH2yBsP3hVZZK8z+Ts9KdJqJfQWmGIStD54mW9gALBQcIAQAKEdw8SeAebE+fAQAAAAAAAAAACwMHAQgJkCWkiLzYKvgACwMHAggJkCWkiLzYKvgACwcHAQgEAAoFCHKS9L38jCQoCwUHCAQACghQy1Q1l3C7ugoCAAkMAgAAAPCSkAAAAAAAAA=="
+    }
+  }
+}
