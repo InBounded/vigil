@@ -1,4 +1,5 @@
 import type { Address, Signature } from "@solana/kit";
+import type { AnalysisGap } from "../report.js";
 import type {
   AccountInfo,
   ContextualResult,
@@ -80,6 +81,10 @@ export class FixtureRpcClient implements RpcClient {
     _options?: RpcReadOptions,
   ): Promise<TransactionResult | null> {
     return Promise.resolve(this.#data.transactions.get(signature) ?? null);
+  }
+
+  limitations(): readonly AnalysisGap[] {
+    return [];
   }
 
   simulateTransaction(

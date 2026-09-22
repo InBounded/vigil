@@ -58,7 +58,8 @@ export type AnalysisGapCode =
   | "LOOKUP_TABLE_INVALID"
   | "LOOKUP_TABLE_INDEX_OUT_OF_RANGE"
   | "EMBEDDED_MESSAGE_INVALID"
-  | "EMBEDDED_MESSAGE_IN_BUFFER";
+  | "EMBEDDED_MESSAGE_IN_BUFFER"
+  | "RPC_TRANSACTION_VERSION_UNSUPPORTED";
 
 /**
  * Something the analysis could not establish. Any gap makes the report incomplete, which must

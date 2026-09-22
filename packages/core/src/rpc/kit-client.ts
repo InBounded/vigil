@@ -2,10 +2,13 @@ import {
   type Address,
   type Base64EncodedWireTransaction,
   createSolanaRpc,
+  isSolanaError,
   type Rpc,
   type Signature,
+  SOLANA_ERROR__JSON_RPC__INVALID_PARAMS,
   type SolanaRpcApi,
 } from "@solana/kit";
+import type { AnalysisGap } from "../report.js";
 import { chunk, mapWithConcurrency } from "./batch.js";
 import { withRetry } from "./retry.js";
 import type {
@@ -37,6 +40,9 @@ export class KitRpcClient implements RpcClient {
   readonly #timeoutMs: number;
   readonly #maxRetryAttempts: number;
   readonly #concurrency: number;
+  /** Highest transaction version requested from `getTransaction`; lowered to 0 if the endpoint rejects 1. */
+  #maxTransactionVersion: 0 | 1 = 1;
+  readonly #limitations: AnalysisGap[] = [];
 
   constructor(url: string, options: KitRpcClientOptions = {}) {
     this.#rpc = createSolanaRpc(url);
@@ -130,19 +136,32 @@ export class KitRpcClient implements RpcClient {
     }));
   }
 
+  /**
+   * Requests the highest transaction version this project can decode (1, SIMD-0385). If the
+   * endpoint rejects that parameter as invalid, falls back to 0 (legacy + v0) for the rest of this
+   * client's life and records a limitation, since v1 transactions then can't be read through it.
+   */
   async getTransaction(
     signature: Signature,
     options?: RpcReadOptions,
   ): Promise<TransactionResult | null> {
-    const response = await this.#send(() =>
-      this.#rpc
-        .getTransaction(signature, {
-          commitment: options?.commitment ?? "confirmed",
-          encoding: "base64",
-          maxSupportedTransactionVersion: 0,
-          ...optional("minContextSlot", options?.minContextSlot),
-        })
-        .send({ abortSignal: this.#timeoutSignal() }),
+    const requested = this.#maxTransactionVersion;
+    const response = await this.#fetchTransaction(signature, options, requested).catch(
+      (error: unknown) => {
+        if (requested !== 1 || !isSolanaError(error, SOLANA_ERROR__JSON_RPC__INVALID_PARAMS)) {
+          throw error;
+        }
+        if (this.#maxTransactionVersion === 1) {
+          this.#maxTransactionVersion = 0;
+          this.#limitations.push({
+            code: "RPC_TRANSACTION_VERSION_UNSUPPORTED",
+            message:
+              "This RPC endpoint rejected maxSupportedTransactionVersion 1, so v1 transactions " +
+              "cannot be read through it. Legacy and v0 transactions are unaffected.",
+          });
+        }
+        return this.#fetchTransaction(signature, options, 0);
+      },
     );
     if (response === null) {
       return null;
@@ -180,6 +199,23 @@ export class KitRpcClient implements RpcClient {
 
   #send<T>(fn: () => Promise<T>): Promise<T> {
     return withRetry(fn, { maxAttempts: this.#maxRetryAttempts });
+  }
+
+  limitations(): readonly AnalysisGap[] {
+    return [...this.#limitations];
+  }
+
+  #fetchTransaction(signature: Signature, options: RpcReadOptions | undefined, version: 0 | 1) {
+    return this.#send(() =>
+      this.#rpc
+        .getTransaction(signature, {
+          commitment: options?.commitment ?? "confirmed",
+          encoding: "base64",
+          maxSupportedTransactionVersion: version,
+          ...optional("minContextSlot", options?.minContextSlot),
+        })
+        .send({ abortSignal: this.#timeoutSignal() }),
+    );
   }
 
   #timeoutSignal(): AbortSignal {

@@ -1,4 +1,5 @@
 import type { Address, Signature } from "@solana/kit";
+import type { AnalysisGap } from "../report.js";
 
 /** Solana cluster, as detected from a genesis hash. See {@link detectCluster}. */
 export type Cluster = "mainnet" | "devnet" | "testnet" | "unknown";
@@ -79,6 +80,12 @@ export interface RpcClient {
   ): Promise<readonly SignatureInfo[]>;
 
   getTransaction(signature: Signature, options?: RpcReadOptions): Promise<TransactionResult | null>;
+
+  /**
+   * Not an RPC method: limitations of this endpoint discovered while talking to it (e.g. it cannot
+   * serve v1 transactions). Callers must copy these into the report's gaps.
+   */
+  limitations(): readonly AnalysisGap[];
 
   /** `sigVerify` is fixed to `false`; this project never verifies signatures via simulation. */
   simulateTransaction(
