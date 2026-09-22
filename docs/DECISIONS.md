@@ -110,3 +110,86 @@ Implements `MultisigAdapter` per the phase spec: `fetchMultisig` (owner + `Multi
 **A real finding caught by the offline tests, not a hypothetical**: `packages/core/src/squads/adapter.test.ts` originally hardcoded `transactionIndex: 352n` for the `3gjeSq...` multisig, copied from the fixture-hunting notes above. The test failed — the live fixture data (`fixtures/multisig-mixed-permissions.json`, re-verified by decoding its raw bytes directly) now says `353n`. Between capturing `multisig-mixed-permissions.json` and `vault-transaction.json` a few minutes apart, this real, active mainnet multisig had a new transaction created on it, advancing its tip. Both fixtures agree with each other (both say `353`); only the test's hardcoded expectation, written from memory before the values were captured, was wrong. Fixed by reading the fixture's actual bytes instead of trusting the earlier note, and the `listProposals` test now exercises exactly this scenario on purpose: the multisig's live tip (353) has no captured transaction, while index 352 (captured before the tip moved) does — proving the walk-down correctly reports "nothing found" for an index that's missing from the fixture rather than assuming adjacency to the tip.
 
 `SquadsMultisigSummary`/`SquadsProposalBundle`/etc. (`packages/core/src/squads/types.ts`) are new types local to the `squads/` module, not yet the `MultisigSummary`/`ProposalSummary` referenced (but not defined) in `AGENTS.md`'s `AnalysisReport` contract — that contract is assembled in a later phase, once decoders and rules exist too. When that phase builds `packages/core/src/report.ts`, it will likely construct its `MultisigSummary`/`ProposalSummary` from these, not duplicate them; noted here so that phase doesn't have to rediscover this.
+
+## 2026-09-22 — Phase 3A package versions (native instruction decoding)
+
+All confirmed live against `registry.npmjs.org/<pkg>/latest` on 2026-09-22 and pinned exactly. Every `@solana-program/*` client peers on `@solana/kit ^8.3.0`, matching the pinned kit.
+
+| Package | Version | Kind | Purpose | Unpacked size | Confirmed API |
+|---|---|---|---|---|---|
+| `@solana-program/system` | 0.15.0 | runtime | System Program parsing | 732 KB | `parseSystemInstruction`, `SystemInstruction`, `SYSTEM_PROGRAM_ADDRESS` (read from shipped `.d.ts`) |
+| `@solana-program/token` | 0.17.0 | runtime | SPL Token **and** Associated Token Account parsing | 1.9 MB | `parseTokenInstruction`, `parseAssociatedTokenInstruction`, `AuthorityType`, `TOKEN_PROGRAM_ADDRESS`, `ASSOCIATED_TOKEN_PROGRAM_ADDRESS` |
+| `@solana-program/compute-budget` | 0.19.0 | runtime | Compute Budget parsing | 271 KB | `parseComputeBudgetInstruction` |
+| `@solana-program/address-lookup-table` | 0.15.0 | runtime | ALT instruction parsing **and** ALT account decoding for resolution | 346 KB | `parseAddressLookupTableInstruction`, `getAddressLookupTableDecoder` (layout checked against its source: u32 state, u64, u64, u8, `Option<Address>` with zeroes-as-none, u16 padding, addresses to the end = 56-byte header) |
+| `@solana-program/memo` | 0.15.0 | runtime | Memo program addresses only (`SUPPORTED_MEMO_PROGRAM_ADDRESSES`); decoding is ours (strict UTF-8) | 54 KB | constants read from shipped `.d.ts` |
+| `@solana-program/stake` | 0.10.0 | runtime | Stake parsing | 978 KB | `parseStakeInstruction` |
+| `@solana-program/loader-v3` | 0.7.0 | runtime | BPF Upgradeable Loader parsing | 448 KB | `parseLoaderV3Instruction` (tags 0–7) |
+| `@solana-program/token-2022` | 0.19.0 | **dev only** | Cross-checking our hand-written Token-2022 decoder in tests | 7.9 MB | `parseToken2022Instruction`, every `get*Instruction` builder used in `token-2022.test.ts` |
+| `fast-check` | 4.10.2 | dev only | Fuzzing decoders with arbitrary bytes, as `AGENTS.md` prescribes | 1.5 MB | `fc.assert`, `fc.property`, `fc.uint8Array`, `fc.record`, `fc.constantFrom` |
+
+Alternatives considered for the runtime clients: hand-writing every native decoder. Rejected — `AGENTS.md` prefers the official `@solana-program/*` clients "where they exist and provide parsing", and they are Codama-generated from each program's own IDL by the program maintainers (Anza / Solana Foundation org `solana-program`), actively released in lockstep with kit. All are ESM, tree-shakable, zero runtime dependencies beyond kit (except `token`, which depends on `@solana-program/system`, already listed). None has an install script.
+
+No `Vote` program decoder: out of scope for this phase (agreed with the maintainer). Vote instructions surface as `decoder: "none"` plus an `UNKNOWN_PROGRAM` gap.
+
+## 2026-09-22 — Token-2022 decoder is hand-written (maintainer decision), with a corrected size rationale
+
+Decision (maintainer, 2026-09-22): hand-write the Token-2022 decoder, fully decoding every instruction that sets or changes an authority, including extension instructions; keep `@solana-program/token-2022` as a dev dependency for cross-checking only.
+
+**Correction to the rationale given when proposing this.** The plan said the official client would "load ZK crypto into the browser". Measured with esbuild (`--bundle --minify --format=esm --platform=browser`, the same esbuild `tsx` ships), that is not true for parsing — tree-shaking drops the confidential-transfer code:
+
+| Bundle | Minified | gzip -9 |
+|---|---|---|
+| kit baseline (`getAddressDecoder` only) | 35.2 KB | 11.2 KB |
+| `parseToken2022Instruction` from `@solana-program/token-2022@0.19.0` | 96.3 KB | 19.3 KB |
+| our `token2022Decoder` | 43.8 KB | 13.7 KB |
+
+So the official parser costs ~61 KB minified / ~8 KB gzip over the kit baseline versus ~8.5 KB / ~2.5 KB for ours. The remaining reasons to hand-write are therefore (a) that size difference, and (b) keeping the production dependency tree small: the official package brings runtime dependencies on `@noble/curves`, `@solana-program/record` and `@solana-program/zk-elgamal-proof`, plus a peer dependency on `@solana/zk-sdk`, none of which a read-only parser needs. The trade-off accepted: we own ~350 lines of layout code. It is mitigated by `token-2022.test.ts`, which builds 75 instructions with the official client's own builders and asserts our name, arguments and account roles equal the official parser's, for every instruction we fully decode (including `SetAuthority` for all 18 authority types, set and removed).
+
+Scope of full decoding: base instructions (0–20 except 21, plus 22, 25, 35, 38), `SetAuthority` for all 18 `AuthorityType`s, `Initialize*`/`Update*` for TransferHook (36), MetadataPointer (39), GroupPointer (40), GroupMemberPointer (41), Pausable (44: initialize/pause/resume), Token Metadata `UpdateAuthority` and Token Group `UpdateGroupAuthority` (8-byte interface discriminators, checked three ways: program source, official client constants, and our own `sha256("<namespace>:<name>")[..8]`), and `Batch` (255, recursively). Every other extension sub-instruction is identified by name only and reported with an `INSTRUCTION_ARGS_NOT_DECODED` gap, so it never looks fully understood.
+
+Layout sources: `solana-program/token-2022` at commit `f0d526508a9fa7e638b9aca1800d9c504ed87335` — `interface/src/instruction.rs` (`unpack_with_rest`, `AuthorityType::from`, `unpack_pubkey_option` = 1-byte tag + 32 bytes), `interface/src/extension/*/instruction.rs` (`MaybeNull<Address>` = 32 bytes, all-zero = none), `program/src/processor.rs` (`process_batch` item layout; dispatch order: 1-byte tag first, then Token Metadata, then Token Group).
+
+Role names follow the official client where they differ from what we first wrote (caught by the cross-check test): `syncNative` takes an optional `rent` account (confirmed in `process_sync_native`); the TransferHook update and pause/resume authority role is `authority`.
+
+## 2026-09-22 — Discrepancies with `docs/reference.md` found in Phase 3A
+
+- **§7 BPF Upgradeable Loader, tags 8 `Migrate` / 9 `ExtendProgramChecked`**: they do not exist. `anza-xyz/solana-sdk` `loader-v3-interface/src/instruction.rs` (master, 2026-09-22) defines exactly 8 variants (0–7), and Agave master's `programs/bpf_loader/src/lib.rs` handles exactly those 8 (Agave pins `solana-loader-v3-interface = "9.0.0"`). `@solana-program/loader-v3@0.7.0` also has 0–7. No hand-written decoder was added; any other tag surfaces as `UNKNOWN_INSTRUCTION`.
+- **§1 Memo**: there are three Memo program addresses, not one. `@solana-program/memo@0.15.0` exports `SUPPORTED_MEMO_PROGRAM_ADDRESSES` = v1 `Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo`, `MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr` (the one in `reference.md`, which the package calls "v3"/legacy) and the current `Memo4c2pN8afCj432Lb7RMVKi9PbQnnW7ewFFaV3oAH`. All three are decoded.
+- **§9 Address Lookup Table header**: confirmed 56 bytes. Agave rejects tables whose address section is not a multiple of 32 bytes; we treat such an account as invalid too.
+- **Transaction versions**: `v1` transaction messages are live on mainnet (observed 2026-09-22: `getTransaction` with `maxSupportedTransactionVersion: 0` failed with "Transaction version (1) is not supported" for a large share of recent Token-2022 and Memo transactions). `reference.md` does not mention v1. See the Phase 3A raw-mode entry below.
+
+## 2026-09-22 — Phase 3A decoding pipeline design
+
+- **Contract additions** (`packages/core/src/report.ts`): only `Provenance`, `DecodedInstruction`, `DecodedAccount`, `AnalysisGap` exist so far; the rest of `AnalysisReport` is a later phase. Two additions to the `AGENTS.md` contract: `DecodedInstruction.inner?: DecodedInstruction[]` (instructions carried inside another: the message of a Squads `vaultTransactionCreate`/`batchAddTransaction`, or the items of a Token `Batch`), and an `AnalysisGap` shape `{ code, message, instructionIndex?, address? }` with a closed set of codes, since `AGENTS.md` names `AnalysisGap` without defining it.
+- **Account index resolution** is shared by Solana wire messages and Squads messages: static keys, then all lookups' writable entries, then all lookups' readonly entries. Confirmed for Squads in `utils/executable_transaction_message.rs` (`get_account_by_index`, squads-protocol/v4 at the pinned commit), and for Solana by comparing against `meta.loadedAddresses` of a real v0 transaction in `squads-fixtures.test.ts`.
+- **Squads compact message format** (`parseSquadsTransactionMessage`): from `instructions/vault_transaction_create.rs` and `utils/small_vec.rs` at the pinned commit (`SmallVec<u8, _>` everywhere except instruction data, `SmallVec<u16, u8>`), with the program's own `TryFrom` validation applied. Cross-checked against `@sqds/multisig`'s encoder and its beet deserializer, and against real mainnet data (raw creation transaction vs. the stored `VaultTransaction` it created).
+- **Lookup-table resolution** fetches tables with one `getMultipleAccounts` per round. Decoding is pure; a round that meets a table it hasn't fetched yet records it, then the pipeline fetches and re-decodes. Tables can only be discovered one embedding level deeper per round, so rounds are bounded by `MAX_EMBEDDED_DEPTH` (3). A missing, foreign-owned, uninitialized or malformed table, or an index past its end, is a gap; affected instructions are shown as undecoded with no accounts rather than with guessed ones.
+- **Instructions whose program address can't be resolved** (only possible inside a Squads message, where program IDs may come from lookup tables) are omitted from `instructions` but recorded as an `ACCOUNT_UNRESOLVED` gap with their top-level index.
+- **Summaries** are generic: `ix.<program>.<instruction>` with every scalar argument and every named account role as string params; `null` becomes `"none"` so an authority being removed is explicit. Wording is the UI's job.
+- **Strings are not sanitized here.** Memo text and Squads memos are returned raw in `args`; the sanitizer is a later phase and must run before any interface renders them.
+- **Transaction buffers**: `transactionBufferCreate`/`Extend` and `vaultTransactionCreateFromBuffer` carry only a chunk (or none) of the message; they are decoded, and an `EMBEDDED_MESSAGE_IN_BUFFER` gap says the proposal content was not shown.
+
+## 2026-09-22 — Raw base64 transaction mode: v1 messages rejected for now
+
+`decodeRawTransaction` accepts legacy and v0 wire transactions (signatures + message, standard base64). `@solana/kit@8.3.0` can decode v1 messages, but they are rejected with a typed `DecodeError("INVALID_TRANSACTION")`: `AGENTS.md` requires every decoder to be tested against real data, and the Phase 2 `KitRpcClient.getTransaction` pins `maxSupportedTransactionVersion: 0`, so no real v1 transaction could be captured. Supporting v1 needs a change to Phase 2 code (the RPC client) and is left to the maintainer's decision; it is listed as an open item in the Phase 3A delivery.
+
+## 2026-09-22 — Stake: legacy account layout handled on top of `@solana-program/stake`
+
+Found by the real-data fixture test, not by reading docs: on mainnet transaction `D78nFyzr…` (legacy-layout `Withdraw`), `@solana-program/stake@0.10.0`'s parser labelled the **Clock sysvar as `withdrawAuthority`** and the StakeHistory sysvar as `lockupAuthority`; `DelegateStake` and `Deactivate` showed the same shift. Cause: the Stake program (solana-program/stake `program/src/processor.rs`, commit `6ff57404c5b723c96bad6c7438d812825968ecaf`) accepts two account layouts for ten instructions — the current, sysvar-free one and the legacy one with sysvars — and tells them apart by checking whether the account at a fixed "branch" position is the Clock sysvar (Rent for `Initialize`/`InitializeChecked`). The client only models the current layout.
+
+`decoders/native/stake.ts` detects the legacy layout exactly as the program does, removes those sysvar positions, lets the official parser name the rest, and re-inserts the sysvars with their own roles (`clockSysvar`, `stakeHistorySysvar`, `stakeConfig`, `rentSysvar`). Covered by tests on three real legacy-layout transactions plus two current-layout instructions built with the official builders. Mislabelling a sysvar as an authority is exactly the kind of error Vigil must not make, so this is recorded as a known limitation of the upstream client (worth reporting upstream; not done from here).
+
+The sysvar addresses are declared locally (kit 8.3.0 does not re-export `@solana/sysvars` from its root) and asserted equal to `@solana/web3.js`'s `SYSVAR_CLOCK_PUBKEY` / `SYSVAR_RENT_PUBKEY` in tests.
+
+## 2026-09-22 — Phase 3A fixtures
+
+Found by walking `getSignaturesForAddress` on the Loader, Squads, Token-2022, Memo, ALT and Stake programs (public mainnet RPC, 1.2–1.5 s spacing, ~1,200 `getTransaction` calls, all allowlisted methods, via the project's own `KitRpcClient`), classifying top-level instructions with the new decoders, then captured with `scripts/capture-fixture.ts`. Each fixture's `description` names every transaction and why it was picked.
+
+- `squads-create-with-lookup-table.json` — v0 Squads create/approve/execute/close; the outer message *and* the embedded Squads message load accounts from table `C4X9vTAX…` (captured).
+- `squads-program-upgrade.json` — a real Squads proposal to upgrade program `Sett1ereLzRw7neSzoUSwp6vvstBkEgAgQeP6wFcw5F`: creation transaction, the live `VaultTransaction`, `Proposal` and `Multisig` accounts; plus an unrelated direct top-level loader `Upgrade`.
+- `squads-batch-and-token-2022.json` — two `batchAddTransaction` (USDC transfers, mint loaded from table `DZboAojT…`, captured) and a `vaultTransactionCreate` embedding a Token-2022 `MintToChecked`. (Phase 2 found no batch; this phase did.)
+- `native-instructions.json` — Stake (legacy layout), Memo, System (incl. durable-nonce advance), ATA, SPL Token, Token-2022, ALT program, and a v0 transaction resolving four lookup tables.
+
+Lookup tables were captured at capture time, after the transactions that used them. This is sound because tables are append-only (existing entries never change) — and it is verified, not assumed: tests assert our resolution equals the cluster's own `meta.loadedAddresses` for both v0 transactions that have it.
+
+**Not found in real data** (covered only by cross-checks against the official client's encoders and the program source): any Token-2022 authority change (`SetAuthority`, extension updates, metadata/group authority), any Token or Token-2022 `Batch`, loader `SetAuthority`/`SetAuthorityChecked`/`Close`/`ExtendProgram`, Stake `Authorize*`/`Merge`/`Split`, and Squads `configTransactionCreate` embedded config actions. Recent Token-2022 activity is largely v1 transactions, which the Phase 2 RPC client cannot fetch (see the raw-mode entry above).
