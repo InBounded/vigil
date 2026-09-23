@@ -381,3 +381,14 @@ Decided on the Phase 4 plan (recorded as given):
   - **VGL-W007** unexpected balance changes (real simulation balance changes)
   - **VGL-C011** upgrade buffer with external authority (real buffer accounts)
   - **the rest of VGL-C001**: the buffer's executable hash (solana-verify compatible, reference §12) and the program's current verification status, from real buffer and program data. Phase 4 covered the upgrade instruction itself on real data.
+
+## 2026-09-22 — Phase 5: simulation and program information — maintainer decisions
+
+Decided on the Phase 5 plan (recorded as given):
+
+1. **Executable hash reference**: OtterSec's `on_chain_hash` (computed server-side by solana-verify) is the primary cross-check; additionally, if installing Rust is straightforward, a local `solana-verify` run. When the local run exists it is the **authoritative** reference and OtterSec's value merely agrees with it. The maintainer is never asked to run local toolchains.
+2. **Pre-state**: as the spec says, `getMultipleAccounts` at `minContextSlot` is the main source; it is cross-checked against the RPC's own `preBalances` / `preTokenBalances` when the endpoint returns them. If they disagree a gap is recorded; neither value is silently picked.
+3. **Scope**: gatherers only (simulation, program information, RPC cross-check). Assembling the `AnalysisReport` gets its own phase.
+4. **Fixtures for SOL and USDC transfer proposals**: a real past proposal's stored message may be simulated against today's state. The fixture name and this file must say clearly that the balances are **current at capture time, not historical**.
+5. **Simulation logs**: sanitized, at most 200 lines × 512 characters.
+6. **Snapshot note (maintainer requirement)**: every simulation result carries, in both languages, a prominent note that it is a snapshot of one moment and the network state can change before execution. It is part of the i18n keys (not left to the UI phase), and balance changes are never presented as a guarantee.
