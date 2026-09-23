@@ -13,6 +13,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json"
   },
   "dependencies": {
+    "@codama/dynamic-parsers": "1.4.2",
+    "@codama/nodes": "1.11.0",
+    "@codama/nodes-from-anchor": "1.5.6",
     "@solana-program/address-lookup-table": "0.15.0",
     "@solana-program/compute-budget": "0.19.0",
     "@solana-program/loader-v3": "0.7.0",
@@ -21,10 +24,13 @@
     "@solana-program/system": "0.15.0",
     "@solana-program/token": "0.17.0",
     "@solana/kit": "8.3.0",
-    "@solana/program-client-core": "8.3.0"
+    "@solana/program-client-core": "8.3.0",
+    "fflate": "0.8.3"
   },
   "devDependencies": {
+    "@solana-program/program-metadata": "0.10.0",
     "@solana-program/token-2022": "0.19.0",
+    "@solana/sysvars": "8.3.0",
     "@solana/web3.js": "1.99.0",
     "@sqds/multisig": "2.1.4",
     "fast-check": "4.10.2"

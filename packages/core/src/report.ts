@@ -1,4 +1,5 @@
 import type { Address } from "@solana/kit";
+import type { AccountLabel } from "./labels/labels.js";
 import type { SanitizerNote } from "./sanitize/args.js";
 
 /**
@@ -22,7 +23,11 @@ export interface DecodedAccount {
   readonly role?: string;
   readonly isSigner: boolean;
   readonly isWritable: boolean;
-  readonly label?: string;
+  /**
+   * An i18n key + params (e.g. `label.vault` `{ index: "0" }`) and where it comes from; a string in
+   * the original `AGENTS.md` contract, see `docs/DECISIONS.md`.
+   */
+  readonly label?: AccountLabel;
   /** Set when this address was loaded from an address lookup table rather than listed statically. */
   readonly fromLookupTable?: Address;
 }
@@ -66,7 +71,8 @@ export type AnalysisGapCode =
   | "LOOKUP_TABLE_INDEX_OUT_OF_RANGE"
   | "EMBEDDED_MESSAGE_INVALID"
   | "EMBEDDED_MESSAGE_IN_BUFFER"
-  | "RPC_TRANSACTION_VERSION_UNSUPPORTED";
+  | "RPC_TRANSACTION_VERSION_UNSUPPORTED"
+  | "TOKEN_DECIMALS_UNKNOWN";
 
 /**
  * Something the analysis could not establish. Any gap makes the report incomplete, which must
