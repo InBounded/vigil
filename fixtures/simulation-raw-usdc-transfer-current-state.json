@@ -1,0 +1,142 @@
+{
+  "capturedAt": "2026-09-23T05:31:07.367Z",
+  "cluster": "mainnet",
+  "contextSlot": "449608866",
+  "description": "The real mainnet transaction 3Feg3sty... (legacy; Compute Budget, Memo, and an SPL Token transferChecked of 50 USDC, also in native-instructions.json) simulated as-is in base64 mode on 2026-09-23 (sigVerify false, replaceRecentBlockhash true) by Vigil's own simulateRawTransaction through RecordingRpcClient (scripts/capture-gatherers.ts --raw-signature). BALANCES ARE CURRENT AT CAPTURE TIME, NOT HISTORICAL: at slot 449608866 the source token account no longer holds 50 USDC, so the transfer fails with SPL Token 'insufficient funds' (custom error 1). The transaction's own fee payer EmpaqxdF... pays. Every RPC answer is recorded as received.",
+  "accounts": {
+    "C8Tk6rAyHwYmsRyvqNusV4y88nK9iwobFMpc5cV2h5gQ": {
+      "dataBase64": "xvp6877brTo9ZfNqq8l0MbG75MLS9uDkfKYCA0UvXWHMo0nbDWligGzs8zdJoDwZDldnsA9UW4bXQJicBNM3jiCajgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "executable": false,
+      "lamports": "2039280",
+      "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "space": "165"
+    },
+    "D9CEogjHA6CpS12F8St9zpSco7pQKJB5uR1RqDsuzQZk": {
+      "dataBase64": "xvp6877brTo9ZfNqq8l0MbG75MLS9uDkfKYCA0UvXWHne9YTcJ8fz9jLZDFj6bn1aJdVDG2qo1IOPRkIdr78/qVTphs/AAAAAQAAAFFk35CmUHRfCd+LB41RiWsofIYV5RTABG2DuXvQ/8BkAQAAAAAAAAAAAAAAADBc/MsFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "executable": false,
+      "lamports": "2149280",
+      "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "space": "165"
+    },
+    "EmpaqxdFbQU8CoCFXCL2WiEksm8PvYksihocVZuq9p1s": {
+      "dataBase64": "",
+      "executable": false,
+      "lamports": "58619296",
+      "owner": "11111111111111111111111111111111",
+      "space": "0"
+    }
+  },
+  "transactions": {
+    "3Feg3sty9zSxEridJZWLqdEuLeSL2khcwyZjQu76KA1nif69KJ7Pj2iDiL9VEDW2qbRFR4if1CdrPyL1rJhWgBE1": {
+      "blockTime": "1790109013",
+      "err": null,
+      "loadedAddresses": {
+        "readonly": [],
+        "writable": []
+      },
+      "slot": "449486791",
+      "transactionBase64": "AnCqzdSpDj+xrkVcDBrSTQpyYKXUhva4/84Nli4cWL6cafbBfmkYsZo/s18ICDlA+y201+cIqtIO67HV9ck9eQLGZYBLq6slhU+LCfGVzllostf73s0Bg7bBjQ6g9Z5gUgM8PsYBkIVPADtglejVDY2Plp8XUumesHDw+Hiz6M8PAgEECMyjSdsNaWKAbOzzN0mgPBkOV2ewD1RbhtdAmJwE0zeO53vWE3CfH8/Yy2QxY+m59WiXVQxtqqNSDj0ZCHa+/P6lWdxCtiHNlOszKnefY637cBLojAOMbRlyqU7QeUoMDbRlmLExWVGoedg0hIcp1OXnzRLoyQAas9eXDuhNa6QPAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAADG+nrzvtutOj1l82qryXQxsbvkwtL24OR8pgIDRS9dYQVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKknfFWMk239oEhx696zjxiSSCSb9AJUwSz2fXG/36mL1QQEAAUCgDgBAAYBASxjYy02OWEyNDg2Ny0yZDU3LTQzYmItYTJjZS1mNzZiODQ2MWM4ZDU6b3BlbgcFAgUDAAAKDIDw+gIAAAAABgQACQMQJwAAAAAAAA=="
+    }
+  },
+  "simulations": {
+    "AnCqzdSpDj+xrkVcDBrSTQpyYKXUhva4/84Nli4cWL6cafbBfmkYsZo/s18ICDlA+y201+cIqtIO67HV9ck9eQLGZYBLq6slhU+LCfGVzllostf73s0Bg7bBjQ6g9Z5gUgM8PsYBkIVPADtglejVDY2Plp8XUumesHDw+Hiz6M8PAgEECMyjSdsNaWKAbOzzN0mgPBkOV2ewD1RbhtdAmJwE0zeO53vWE3CfH8/Yy2QxY+m59WiXVQxtqqNSDj0ZCHa+/P6lWdxCtiHNlOszKnefY637cBLojAOMbRlyqU7QeUoMDbRlmLExWVGoedg0hIcp1OXnzRLoyQAas9eXDuhNa6QPAwZGb+UhFzL/7K26csOb57yM5bvF9xJrLEObOkAAAADG+nrzvtutOj1l82qryXQxsbvkwtL24OR8pgIDRS9dYQVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKknfFWMk239oEhx696zjxiSSCSb9AJUwSz2fXG/36mL1QQEAAUCgDgBAAYBASxjYy02OWEyNDg2Ny0yZDU3LTQzYmItYTJjZS1mNzZiODQ2MWM4ZDU6b3BlbgcFAgUDAAAKDIDw+gIAAAAABgQACQMQJwAAAAAAAA==": {
+      "request": {
+        "accounts": [
+          "EmpaqxdFbQU8CoCFXCL2WiEksm8PvYksihocVZuq9p1s",
+          "C8Tk6rAyHwYmsRyvqNusV4y88nK9iwobFMpc5cV2h5gQ",
+          "D9CEogjHA6CpS12F8St9zpSco7pQKJB5uR1RqDsuzQZk"
+        ],
+        "innerInstructions": true,
+        "replaceRecentBlockhash": true
+      },
+      "result": {
+        "accounts": [
+          null,
+          null,
+          null
+        ],
+        "contextSlot": "449608866",
+        "err": {
+          "InstructionError": [
+            "2",
+            {
+              "Custom": "1"
+            }
+          ]
+        },
+        "fee": "10800",
+        "innerInstructionPrograms": [],
+        "loadedAddresses": {
+          "readonly": [],
+          "writable": []
+        },
+        "logs": [
+          "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+          "Program ComputeBudget111111111111111111111111111111 success",
+          "Program MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr invoke [1]",
+          "Program log: Signed by GachaNgyXTU3zFogQ8Z5jR2BLXs8215X2AtEH18VxJq3",
+          "Program log: Memo (len 44): \"cc-69a24867-2d57-43bb-a2ce-f76b8461c8d5:open\"",
+          "Program MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr consumed 30912 of 79850 compute units",
+          "Program MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr success",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [1]",
+          "Program log: Error: insufficient funds",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 243 of 48938 compute units",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA failed: custom program error: 0x1"
+        ],
+        "postBalances": [
+          "58608496",
+          "15723982963",
+          "2039280",
+          "2149280",
+          "1",
+          "534788257985",
+          "523015135",
+          "200653906"
+        ],
+        "postTokenBalances": [
+          {
+            "accountIndex": 2,
+            "amount": "42900000",
+            "decimals": 6,
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "owner": "EmpaqxdFbQU8CoCFXCL2WiEksm8PvYksihocVZuq9p1s"
+          },
+          {
+            "accountIndex": 3,
+            "amount": "271046824869",
+            "decimals": 6,
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "owner": "GachaNgyXTU3zFogQ8Z5jR2BLXs8215X2AtEH18VxJq3"
+          }
+        ],
+        "preBalances": [
+          "58619296",
+          "15723982963",
+          "2039280",
+          "2149280",
+          "1",
+          "534788257985",
+          "523015135",
+          "200653906"
+        ],
+        "preTokenBalances": [
+          {
+            "accountIndex": 2,
+            "amount": "42900000",
+            "decimals": 6,
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "owner": "EmpaqxdFbQU8CoCFXCL2WiEksm8PvYksihocVZuq9p1s"
+          },
+          {
+            "accountIndex": 3,
+            "amount": "271046824869",
+            "decimals": 6,
+            "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "owner": "GachaNgyXTU3zFogQ8Z5jR2BLXs8215X2AtEH18VxJq3"
+          }
+        ],
+        "unitsConsumed": "31305"
+      }
+    }
+  }
+}

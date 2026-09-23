@@ -31,7 +31,7 @@ import {
   simulateVaultMessage,
 } from "../packages/core/src/simulate/vault.js";
 import { SquadsV4Adapter } from "../packages/core/src/squads/adapter.js";
-import { embeddedVaultMessages } from "./lib/embedded.js";
+import { embeddedVaultMessages } from "../packages/core/src/test-support/embedded.js";
 import { RecordingRpcClient, recordingToFixture } from "./lib/recording-rpc.js";
 
 const RPC_URLS: Record<string, string> = {

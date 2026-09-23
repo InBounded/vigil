@@ -1,5 +1,5 @@
 export type { ProgramFacts, ProgramFactsInput } from "./gather.js";
-export { gatherProgramFacts, invokedPrograms, upgradeBuffers } from "./gather.js";
+export { gatherProgramFacts, invokedPrograms, upgradeBuffers, upgradedPrograms } from "./gather.js";
 export { executableHash } from "./hash.js";
 export {
   BUFFER_METADATA_SIZE,

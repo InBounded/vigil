@@ -2,7 +2,7 @@
 /**
  * Records real answers of the program-verification API (`GET https://verify.osec.io/status/<id>`)
  * verbatim — HTTP status and body text — through Vigil's own `FetchHttpClient` (allowlisted host
- * only), so verification tests replay real responses offline.
+ * only), into `fixtures/http/`, so verification tests replay real responses offline.
  *
  * Usage: pnpm exec tsx scripts/capture-verification.ts --name <file> --description "..." \
  *          --programs A,B,C
@@ -36,7 +36,7 @@ for (const program of values.programs.split(",").map((p) => address(p.trim()))) 
   console.log(program, response.status, response.text);
   await new Promise((resolve) => setTimeout(resolve, 500));
 }
-const outDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "fixtures");
+const outDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "fixtures", "http");
 await mkdir(outDir, { recursive: true });
 const outPath = path.join(outDir, `${values.name}.json`);
 await writeFile(

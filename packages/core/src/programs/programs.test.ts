@@ -17,13 +17,13 @@ import { parseBufferAccount, parseProgramAccount, parseProgramDataAccount } from
 /**
  * The executable hashes printed by `solana-verify` 0.5.2, built from
  * solana-foundation/solana-verifiable-build at fef5951281092948c7c465bf63fa28ab59ff5485 with
- * `cargo install --git … --rev fef59512 --locked solana-verify`, run on 2026-09-23 as
+ * `cargo install --git \u2026 --rev fef59512 --locked solana-verify`, run on 2026-09-23 as
  * `solana-verify get-program-hash -u https://api.mainnet-beta.solana.com <program>` and
- * `solana-verify get-buffer-hash -u … <buffer>` against the same deployments as the fixtures (the
+ * `solana-verify get-buffer-hash -u \u2026 <buffer>` against the same deployments as the fixtures (the
  * fixtures' ProgramData deploy slots are asserted below). The buffer was still being written, so
  * its hash was taken immediately before and after the capture, and only accepted when both runs
  * agreed (the first bracketed attempt did not). This local run is the authoritative
- * reference; OtterSec's `on_chain_hash` (verification-osec.json) agrees for the programs it has.
+ * reference; OtterSec's `on_chain_hash` (http/verification-osec.json) agrees for the programs it has.
  */
 const SOLANA_VERIFY = {
   buffer6W37: "0f7beab6d6d001eb020143a87152e8352c2cc056797c41bb6b78774a7ca63bab",

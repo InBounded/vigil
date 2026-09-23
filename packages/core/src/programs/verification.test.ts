@@ -1,6 +1,6 @@
 /**
  * Program verification (Phase 5.2) against real OtterSec answers recorded verbatim in
- * `fixtures/verification-osec.json` (`scripts/capture-verification.ts`), and the programs'
+ * `fixtures/http/verification-osec.json` (`scripts/capture-verification.ts`), and the programs'
  * real on-chain facts from `programs-mainnet.json.gz`.
  */
 import { type Address, address } from "@solana/kit";
@@ -48,7 +48,7 @@ const byAddress = (programs: readonly ProgramInfo[], a: Address) =>
 
 describe("addVerification with real API answers", () => {
   it("maps verified and unverified programs, keeping only safe links", async () => {
-    const http = await loadRecordedHttp("verification-osec");
+    const http = await loadRecordedHttp("http/verification-osec");
     const result = await addVerification(facts, {
       cache: new VerificationCache(clock()),
       enabled: true,
@@ -94,7 +94,7 @@ describe("addVerification with real API answers", () => {
   it("reports a verified answer whose build hash differs from the deployed code as unverified", async () => {
     // The real answer for J24jWEos... applied to a program whose deployed code hashes differently
     // (Sett1ere's real hash): what Vigil would see if J24jWEos... were upgraded after verification.
-    const http = await loadRecordedHttp("verification-osec");
+    const http = await loadRecordedHttp("http/verification-osec");
     const j24j = byAddress(facts, J24J);
     const sett1ere = byAddress(facts, SETT1ERE);
     if (j24j === undefined || sett1ere?.executableHash === undefined) {
@@ -116,7 +116,7 @@ describe("addVerification with real API answers", () => {
   });
 
   it("drops a commit that is not a hex commit (Marinade's real answer has an empty one)", async () => {
-    const http = await loadRecordedHttp("verification-osec");
+    const http = await loadRecordedHttp("http/verification-osec");
     const marinade = address("MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD");
     const result = await addVerification(
       [
@@ -199,7 +199,7 @@ describe("API failures end in a gap, never an exception", () => {
 
 describe("cache and opt-out", () => {
   it("caches answers for one hour of the injected clock, and never caches failures", async () => {
-    const recorded = await loadRecordedHttp("verification-osec");
+    const recorded = await loadRecordedHttp("http/verification-osec");
     const time = clock();
     const cache = new VerificationCache(time);
     const cpmm = facts.filter((p) => p.address === CPMM);

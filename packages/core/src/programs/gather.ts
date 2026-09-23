@@ -263,13 +263,25 @@ export function invokedPrograms(
 
 /** Buffers of every loader `upgrade` instruction (nested ones too). */
 export function upgradeBuffers(instructions: readonly DecodedInstruction[]): Address[] {
+  return upgradeAccounts(instructions, "bufferAccount");
+}
+
+/**
+ * Programs replaced by a loader `upgrade` (nested ones too). They are not *invoked* (the loader
+ * is), but an upgrade proposal must still show their current state and verification (VGL-C001).
+ */
+export function upgradedPrograms(instructions: readonly DecodedInstruction[]): Address[] {
+  return upgradeAccounts(instructions, "programAccount");
+}
+
+function upgradeAccounts(instructions: readonly DecodedInstruction[], role: string): Address[] {
   const out = new Set<Address>();
   const walk = (list: readonly DecodedInstruction[]) => {
     for (const instruction of list) {
       if (instruction.programId === LOADERS.upgradeable && instruction.name === "upgrade") {
-        const buffer = instruction.accounts.find((account) => account.role === "bufferAccount");
-        if (buffer !== undefined) {
-          out.add(buffer.address);
+        const account = instruction.accounts.find((a) => a.role === role);
+        if (account !== undefined) {
+          out.add(account.address);
         }
       }
       if (instruction.inner !== undefined) {

@@ -5,6 +5,7 @@
  */
 import { type Address, address, getBase64Encoder } from "@solana/kit";
 import { beforeAll, describe, expect, it } from "vitest";
+import { decodeMessageWithLookups } from "../decoders/decode.js";
 import { parseWireTransaction } from "../decoders/transaction.js";
 import { renderFinding, renderSimulationNotes } from "../i18n/render.js";
 import { buildLabels } from "../labels/labels.js";
@@ -13,9 +14,10 @@ import { FixtureRpcClient } from "../rpc/fixture-client.js";
 import type { FixtureData } from "../rpc/index.js";
 import { simulationProblem, unexpectedBalanceChanges } from "../rules/catalog/warning.js";
 import { SquadsV4Adapter } from "../squads/adapter.js";
+import { embeddedVaultMessages } from "../test-support/embedded.js";
 import { context, loadFixture, proposalFixtureContext } from "../test-support/rules.js";
 import { readTokenBalance } from "./balances.js";
-import { loadVaultTargets, simulateProposal } from "./vault.js";
+import { loadVaultTargets, simulateProposal, simulateVaultMessage } from "./vault.js";
 
 async function simulateFixtureProposal(data: FixtureData, multisig: Address, index: bigint) {
   const rpc = new FixtureRpcClient(data);
@@ -138,6 +140,21 @@ describe("vault proposal simulated against current state (opaque withdrawal, #35
     ]);
     expect(simulationProblem.evaluate(ctx)).toEqual([]);
   });
+
+  it("names the batch item when the unexplained changes come from one item of a batch", async () => {
+    const { simulation } = await simulateFixtureProposal(data, THREE_GJE, 352n);
+    const item = { ...single(simulation.outcome), batchItem: 3 };
+    const batch: BatchSimulation = { items: [item], notes: item.notes, status: "batch" };
+    const { context: ctx } = await proposalFixtureContext("vault-transaction", THREE_GJE, 352n, {
+      simulation: batch,
+    });
+    const [finding] = unexpectedBalanceChanges.evaluate(ctx);
+    expect(finding?.params).toEqual({ batchItem: "3", count: "2" });
+    expect(finding?.evidence.at(-1)).toBe("batchItem: 3");
+    expect(renderFinding(finding as NonNullable<typeof finding>, "en").text).toBe(
+      "Batch item 3: the simulation shows 2 balance change(s) that no decoded instruction explains",
+    );
+  });
 });
 
 describe("batch proposal simulated item by item against current state (USDC, #2270)", () => {
@@ -203,7 +220,7 @@ describe("batch proposal simulated item by item against current state (USDC, #22
       'Batch item 1: simulation failed: {"InstructionError":["1",{"Custom":"1"}]}',
     );
     expect(renderFinding(first, "pt-PT").text).toBe(
-      'Item 1 do lote: a simulação falhou: {"InstructionError":["1",{"Custom":"1"}]}',
+      'Item 1 do lote: a simula\u00E7\u00E3o falhou: {"InstructionError":["1",{"Custom":"1"}]}',
     );
   });
 
@@ -217,12 +234,116 @@ describe("batch proposal simulated item by item against current state (USDC, #22
     );
     const pt = renderSimulationNotes(batch, "pt-PT").map((r) => r.text);
     expect(pt[0]).toBe(
-      "Retrato de um só momento: esta simulação mostra o que aconteceria se a transação fosse executada agora. O estado da rede pode mudar antes da execução, por isso os resultados apresentados não são uma garantia.",
+      "Retrato de um s\u00F3 momento: esta simula\u00E7\u00E3o mostra o que aconteceria se a transa\u00E7\u00E3o fosse executada agora. O estado da rede pode mudar antes da execu\u00E7\u00E3o, por isso os resultados apresentados n\u00E3o s\u00E3o uma garantia.",
     );
     // Even a result that somehow lost its notes gets the snapshot note.
     const bare = { ...batch, items: [], notes: [] };
     expect(renderSimulationNotes(bare, "en")[0]?.text).toBe(en[0]);
     expect(renderSimulationNotes(bare, "en")).toHaveLength(1);
+  });
+});
+
+describe("SOL and USDC transfer proposal simulated against current state (4QBhBYPp\u2026)", () => {
+  const MULTISIG = address("4QBhBYPp8y6Mcw7UtycvG4ACuR6ThyMe97SEv87Wiy5m");
+  const VAULT = address("Bjv8VJdAZqtYW3cz5nfNEnVZx2WwWMA1quqgPRGVQMTp");
+  const RECIPIENT = address("AHBX3c5o2jKkuqc2V5nzYPrreUC66BuK55WemM74XMvy");
+  const USDC = address("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+  let data: FixtureData;
+  let result: SimulationResult;
+  let amounts: { sol: bigint; usdc: bigint };
+  beforeAll(async () => {
+    data = await loadFixture("simulation-sol-usdc-transfer-current-state");
+    const rpc = new FixtureRpcClient(data);
+    const created = [...data.transactions.values()][0];
+    if (created === undefined) {
+      throw new Error("fixture has no creation transaction");
+    }
+    const [embedded] = await embeddedVaultMessages(created);
+    if (embedded === undefined || embedded.multisig !== MULTISIG) {
+      throw new Error("expected the 4QBhBYPp proposal");
+    }
+    const multisig = await new SquadsV4Adapter(rpc).fetchMultisig(MULTISIG);
+    const labels = await buildLabels({
+      cluster: "mainnet",
+      multisig: { address: MULTISIG, members: multisig.members.map((m) => m.key), vaultIndex: 0 },
+    });
+    result = (
+      await simulateVaultMessage(rpc, multisig, embedded.target, { cluster: "mainnet", labels })
+    ).result;
+    // What the proposal itself says it transfers, decoded independently of the simulation.
+    const decoded = await decodeMessageWithLookups(rpc, embedded.target.message, { idl: false });
+    const [sol, usdc] = decoded.instructions;
+    amounts = { sol: BigInt(String(sol?.args?.amount)), usdc: BigInt(String(usdc?.args?.amount)) };
+    expect([sol?.name, usdc?.name]).toEqual(["transferSol", "transfer"]);
+  });
+
+  it("moves exactly the SOL the proposal transfers, to the lamport, with the fee excluded", () => {
+    if (result.status !== "success") {
+      throw new Error(`expected success, got ${result.status}`);
+    }
+    expect(amounts.sol).toBe(2_000_000n);
+    const sol = result.balanceChanges.filter((c) => c.asset === "SOL");
+    expect(sol).toEqual([
+      { account: RECIPIENT, asset: "SOL", decimals: 9, post: 4_506_560n, pre: 2_506_560n },
+      {
+        account: VAULT,
+        asset: "SOL",
+        decimals: 9,
+        feeExcluded: 5000n,
+        holderLabel: { key: "label.vault", params: { index: "0" }, source: "multisig" },
+        label: { key: "label.vault", params: { index: "0" }, source: "multisig" },
+        post: 52_511_560n,
+        pre: 54_511_560n,
+      },
+    ]);
+    expect(sol.map((c) => c.post - c.pre)).toEqual([amounts.sol, -amounts.sol]);
+    expect(result.notes).toContainEqual({
+      key: "simulation.note.feeExcluded",
+      params: { estimated: "false", fee: "5000", feePayer: VAULT },
+    });
+  });
+
+  it("moves exactly the USDC the proposal transfers, to the smallest unit", () => {
+    if (result.status !== "success") {
+      throw new Error("expected success");
+    }
+    expect(amounts.usdc).toBe(6_860_000n);
+    const usdc = result.balanceChanges.filter((c) => c.asset === USDC);
+    expect(usdc.map((c) => [c.account, c.owner, c.pre, c.post, c.decimals])).toEqual([
+      ["Avc8oywAgQmUev8iMRDoN2Bndyk5vRajwzW48yW1saDR", RECIPIENT, 15_580_000n, 22_440_000n, 6],
+      ["Bsk1Ei2jEYQT9m6tHU7wjkxdx4mSa3jbyUwBApJ7XPE3", VAULT, 42_420_000n, 35_560_000n, 6],
+    ]);
+    expect(usdc.map((c) => c.post - c.pre)).toEqual([amounts.usdc, -amounts.usdc]);
+  });
+
+  it("agrees with the RPC's own pre/post balances from the same simulation", () => {
+    const [transaction, recorded] = [...(data.simulations?.entries() ?? [])][0] ?? [];
+    if (transaction === undefined || recorded === undefined || !("result" in recorded)) {
+      throw new Error("expected one recorded simulation result");
+    }
+    const keys = getAccountKeys(transaction);
+    const sim = recorded.result;
+    const lamports = (list: readonly bigint[] | null, key: Address) => list?.[keys.indexOf(key)];
+    expect(lamports(sim.preBalances, RECIPIENT)).toBe(2_506_560n);
+    expect(lamports(sim.postBalances, RECIPIENT)).toBe(4_506_560n);
+    // The RPC's post balance includes the fee Vigil adds back.
+    expect(lamports(sim.postBalances, VAULT)).toBe(52_511_560n - 5000n);
+    const token = (list: typeof sim.preTokenBalances, key: Address) =>
+      list?.find((entry) => keys[entry.accountIndex] === key)?.amount;
+    expect(
+      token(sim.preTokenBalances, address("Bsk1Ei2jEYQT9m6tHU7wjkxdx4mSa3jbyUwBApJ7XPE3")),
+    ).toBe(42_420_000n);
+    expect(
+      token(sim.postTokenBalances, address("Avc8oywAgQmUev8iMRDoN2Bndyk5vRajwzW48yW1saDR")),
+    ).toBe(22_440_000n);
+  });
+
+  it("renders the changes with the snapshot note first", () => {
+    const notes = renderSimulationNotes(result, "en").map((r) => r.text);
+    expect(notes[0]).toContain("Network state can change before execution");
+    expect(notes[1]).toBe(
+      "Vault #0 pays the simulated network fee of 0.000005 SOL (as reported by the RPC); the fee is left out of the balance changes shown.",
+    );
   });
 });
 
