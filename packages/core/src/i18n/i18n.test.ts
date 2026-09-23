@@ -105,6 +105,17 @@ describe("number formatting", () => {
     expect(formatAmount(250000500000n, 6, "pt-PT")).toBe("250\u00A0000,5");
   });
 
+  it("groups pt-PT digits only from five digits, like CLDR and Intl", () => {
+    expect(formatAmount("1000", 0, "pt-PT")).toBe("1000");
+    expect(formatAmount("9999500", 3, "pt-PT")).toBe("9999,5");
+    expect(formatAmount("10000", 0, "pt-PT")).toBe("10\u00A0000");
+    expect(formatAmount("1000", 0, "en")).toBe("1,000");
+    const intl = new Intl.NumberFormat("pt-PT", { maximumFractionDigits: 0 });
+    for (const n of [1000, 9999, 10000, 1234567]) {
+      expect(formatAmount(String(n), 0, "pt-PT")).toBe(intl.format(n).replace(/\s/g, "\u00A0"));
+    }
+  });
+
   it("shortens addresses to the first and last four characters", () => {
     expect(shortAddress("Gh3wV2hQvA4dq8x4Ld1PnJ7nzJ5kJ4mE3wWfHq1Lq7m")).toBe("Gh3w…Lq7m");
   });
@@ -163,7 +174,7 @@ describe("summaries of real mainnet instructions", () => {
   });
 
   it("renders every instruction of every real fixture in both languages with no missing values", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, "warn");
     const files = (await readdir(FIXTURES)).filter((f) => f.endsWith(".json"));
     let rendered = 0;
     const problems: string[] = [];
@@ -195,6 +206,8 @@ describe("summaries of real mainnet instructions", () => {
     }
     expect(problems).toEqual([]);
     expect(rendered).toBeGreaterThan(100);
+    // Codama conversion warnings are captured, never printed.
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it("says an instruction could not be decoded instead of staying silent", () => {

@@ -61,8 +61,6 @@ async function decodeTx(data: FixtureData, signature: string) {
   if (tx === undefined) {
     throw new Error(`fixture has no transaction ${signature}`);
   }
-  // Codama warns on stderr about PDA name collisions in real IDLs; not our output to test.
-  vi.spyOn(console, "warn").mockImplementation(() => undefined);
   return decodeRawTransaction(new FixtureRpcClient(data), tx.transactionBase64);
 }
 
@@ -91,7 +89,6 @@ function patched(info: AccountInfo, patch: (bytes: Uint8Array) => void): Account
 }
 
 async function entryFor(data: FixtureData, program: Address, cache?: IdlCache): Promise<IdlEntry> {
-  vi.spyOn(console, "warn").mockImplementation(() => undefined);
   const entries = await loadProgramIdls(
     new FixtureRpcClient(data),
     [program],
@@ -367,6 +364,21 @@ describe("decompression limits", () => {
     expect(inflateBounded(gzipSync(text), "gzip")).toEqual(text);
     const truncated = deflateSync(text).subarray(0, 40);
     expect(() => inflateBounded(truncated, "zlib")).toThrow();
+  });
+});
+
+describe("Codama conversion warnings", () => {
+  it("are captured on the loaded IDL and never printed", async () => {
+    const warn = vi.spyOn(console, "warn");
+    const at = await findAnchorIdlAddress(PUMP);
+    const bytes = base64Bytes.encode(account(idls, at).dataBase64);
+    const length = new DataView(bytes.buffer, bytes.byteOffset).getUint32(40, true);
+    const json = new TextDecoder().decode(inflateBounded(bytes.subarray(44, 44 + length), "zlib"));
+    const { warnings } = loadIdl(json, PUMP);
+    expect(warnings.some((w) => w.startsWith("PDA name collision"))).toBe(true);
+    await decodeTx(idls, PUMP_TX);
+    expect(warn).not.toHaveBeenCalled();
+    expect(console.warn).not.toBe(undefined);
   });
 });
 

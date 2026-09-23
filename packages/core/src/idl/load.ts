@@ -22,6 +22,11 @@ export type IdlFormat = "anchor-legacy" | "anchor" | "codama";
 export interface LoadedIdl {
   readonly root: RootNode;
   readonly format: IdlFormat;
+  /**
+   * Warnings the Anchor conversion emitted (e.g. "PDA name collision ..."), captured instead of
+   * printed so they never reach CLI output. Informational; names in them passed the identifier check.
+   */
+  readonly warnings: readonly string[];
 }
 
 /** Every IDL name that can reach a report (instruction, account, argument, field, variant, type). */
@@ -46,6 +51,7 @@ export function loadIdl(json: string, program: Address): LoadedIdl {
 
   let root: RootNode;
   let format: IdlFormat;
+  const warnings: string[] = [];
   if (document.standard === "codama" && document.kind === "rootNode") {
     if (!isObject(document.program) || document.program.kind !== "programNode") {
       throw new IdlLoadError("the Codama IDL has no program node");
@@ -66,7 +72,7 @@ export function loadIdl(json: string, program: Address): LoadedIdl {
       throw new IdlLoadError("the Anchor IDL has no program address");
     }
     try {
-      root = rootNodeFromAnchor(document as unknown as AnchorIdl);
+      root = captureWarnings(() => rootNodeFromAnchor(document as unknown as AnchorIdl), warnings);
     } catch (error) {
       throw new IdlLoadError(`the Anchor IDL could not be converted: ${message(error)}`);
     }
@@ -83,8 +89,27 @@ export function loadIdl(json: string, program: Address): LoadedIdl {
   // this IDL may only ever describe its own program.
   return {
     format,
+    warnings,
     root: { ...root, additionalPrograms: [], program: { ...root.program, publicKey: program } },
   };
+}
+
+/**
+ * `@codama/nodes-from-anchor` reports conversion warnings through `logWarn` in `@codama/errors`,
+ * which is a bare `console.warn` with no option to turn it off. The conversion is synchronous, so
+ * `console.warn` is swapped out only for its duration (nothing else can run in between) and always
+ * restored.
+ */
+function captureWarnings<T>(run: () => T, into: string[]): T {
+  const original = console.warn;
+  console.warn = (...args: unknown[]) => {
+    into.push(args.map(String).join(" "));
+  };
+  try {
+    return run();
+  } finally {
+    console.warn = original;
+  }
 }
 
 function checkRawAnchorNames(document: { [key: string]: Json }): void {
