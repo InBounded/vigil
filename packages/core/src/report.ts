@@ -59,24 +59,28 @@ export interface DecodedInstruction {
   readonly sanitizer?: readonly SanitizerNote[];
 }
 
-export type AnalysisGapCode =
-  | "UNKNOWN_PROGRAM"
-  | "UNKNOWN_INSTRUCTION"
-  | "MALFORMED_INSTRUCTION"
-  | "INSTRUCTION_ARGS_NOT_DECODED"
-  | "ACCOUNT_INDEX_OUT_OF_RANGE"
-  | "ACCOUNT_UNRESOLVED"
-  | "LOOKUP_TABLE_NOT_FOUND"
-  | "LOOKUP_TABLE_INVALID"
-  | "LOOKUP_TABLE_INDEX_OUT_OF_RANGE"
-  | "EMBEDDED_MESSAGE_INVALID"
-  | "EMBEDDED_MESSAGE_IN_BUFFER"
-  | "RPC_TRANSACTION_VERSION_UNSUPPORTED"
-  | "TOKEN_DECIMALS_UNKNOWN"
-  | "IDL_FETCH_FAILED"
-  | "IDL_INVALID"
-  | "IDL_AT_URL"
-  | "IDL_UNSUPPORTED";
+/** Every gap code, as a runtime list (each one has plain-language text in every locale). */
+export const ANALYSIS_GAP_CODES = [
+  "UNKNOWN_PROGRAM",
+  "UNKNOWN_INSTRUCTION",
+  "MALFORMED_INSTRUCTION",
+  "INSTRUCTION_ARGS_NOT_DECODED",
+  "ACCOUNT_INDEX_OUT_OF_RANGE",
+  "ACCOUNT_UNRESOLVED",
+  "LOOKUP_TABLE_NOT_FOUND",
+  "LOOKUP_TABLE_INVALID",
+  "LOOKUP_TABLE_INDEX_OUT_OF_RANGE",
+  "EMBEDDED_MESSAGE_INVALID",
+  "EMBEDDED_MESSAGE_IN_BUFFER",
+  "RPC_TRANSACTION_VERSION_UNSUPPORTED",
+  "TOKEN_DECIMALS_UNKNOWN",
+  "IDL_FETCH_FAILED",
+  "IDL_INVALID",
+  "IDL_AT_URL",
+  "IDL_UNSUPPORTED",
+] as const;
+
+export type AnalysisGapCode = (typeof ANALYSIS_GAP_CODES)[number];
 
 /**
  * Something the analysis could not establish. Any gap makes the report incomplete, which must
