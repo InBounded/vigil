@@ -15,13 +15,23 @@ export {
 export type {
   AnalysisGap,
   AnalysisGapCode,
+  AssetId,
+  BalanceChange,
+  ConfigAction,
   DecodedAccount,
   DecodedInstruction,
   DecoderKind,
+  Finding,
+  ProgramInfo,
   Provenance,
+  Severity,
+  SimulationResult,
+  SpendingLimitPeriod,
+  Verdict,
 } from "./report.js";
 export { ANALYSIS_GAP_CODES } from "./report.js";
 export * from "./rpc/index.js";
+export * from "./rules/index.js";
 export * from "./sanitize/index.js";
 export * from "./squads/index.js";
 export * from "./tokens/index.js";
