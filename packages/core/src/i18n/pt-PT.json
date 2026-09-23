@@ -121,6 +121,7 @@
   "gap.ACCOUNT_UNRESOLVED": "Algumas contas não foram identificadas porque não foi possível ler a sua tabela de endereços.",
   "gap.EMBEDDED_MESSAGE_INVALID": "Não foi possível descodificar uma transação contida numa instrução Squads.",
   "gap.EMBEDDED_MESSAGE_IN_BUFFER": "A transação é montada num buffer Squads ao longo de várias transações e não pode ser mostrada apenas a partir desta instrução.",
+  "gap.HISTORY_UNAVAILABLE": "Não foi possível ler as transações recentes do cofre, por isso não foi possível verificar se um destino é novo.",
   "gap.IDL_AT_URL": "Um programa publica a sua descrição (IDL) num endereço web externo. O Vigil nunca abre ligações encontradas na blockchain, pelo que o efeito desta instrução é desconhecido.",
   "gap.IDL_FETCH_FAILED": "Não foi possível ler da blockchain a descrição (IDL) de um programa, pelo que as suas instruções não são descodificadas.",
   "gap.IDL_INVALID": "A descrição (IDL) publicada por um programa é inválida ou insegura, pelo que as suas instruções não são descodificadas.",

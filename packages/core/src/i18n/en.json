@@ -121,6 +121,7 @@
   "gap.ACCOUNT_UNRESOLVED": "Some accounts could not be identified because their lookup table could not be read.",
   "gap.EMBEDDED_MESSAGE_INVALID": "A transaction carried inside a Squads instruction could not be decoded.",
   "gap.EMBEDDED_MESSAGE_IN_BUFFER": "The transaction is assembled in a Squads buffer across several transactions and cannot be shown from this instruction alone.",
+  "gap.HISTORY_UNAVAILABLE": "The vault's recent transactions could not be read, so whether a destination is new could not be checked.",
   "gap.IDL_AT_URL": "A program publishes its own description (IDL) at an external web address. Vigil never opens links found on the chain, so what this instruction does is unknown.",
   "gap.IDL_FETCH_FAILED": "A program's own description (IDL) could not be read from the chain, so its instructions are not decoded.",
   "gap.IDL_INVALID": "A program's published description (IDL) is invalid or unsafe to use, so its instructions are not decoded.",

@@ -1,6 +1,6 @@
 import { type Address, isAddress } from "@solana/kit";
 import { findRegistryProgram, REGISTRY_TOKENS } from "../../registry/index.js";
-import type { AssetId, Finding, SimulationResult } from "../../report.js";
+import type { AssetId, DecodedInstruction, Finding, SimulationResult } from "../../report.js";
 import { type SanitizeFlag, sanitizeOnchainString } from "../../sanitize/sanitize.js";
 import {
   accountByRole,
@@ -131,7 +131,7 @@ export const thirdPartyUpgradeable: Rule = {
   variants: [""],
 };
 
-interface Transfer {
+export interface Transfer {
   readonly at: WalkedInstruction;
   readonly from: Address;
   readonly to: Address;
@@ -143,10 +143,17 @@ interface Transfer {
 
 const TOKEN_PARAMS = ["mint", "decimals", "symbol", "declaredName", "declaredSymbol"];
 
-/** SOL and token transfers, with the account whose balance they draw on. */
 function transfers(context: RuleContext): Transfer[] {
+  return listTransfers(context.instructions);
+}
+
+/**
+ * SOL and token transfers, with the account whose balance they draw on. Exported so the balance
+ * gatherer reads exactly the balances VGL-W004 compares with.
+ */
+export function listTransfers(instructions: readonly DecodedInstruction[]): Transfer[] {
   const out: Transfer[] = [];
-  for (const at of walkInstructions(context.instructions)) {
+  for (const at of walkInstructions(instructions)) {
     const ix = at.instruction;
     const amount = bigintArg(ix, "amount");
     let from: Address | undefined;

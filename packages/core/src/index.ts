@@ -1,3 +1,4 @@
+export * from "./analyze/index.js";
 export type { AnnotationResult } from "./annotate.js";
 export { annotateInstructions } from "./annotate.js";
 export * from "./crosscheck/index.js";
@@ -18,6 +19,7 @@ export {
 export type {
   AnalysisGap,
   AnalysisGapCode,
+  AnalysisReport,
   AssetId,
   BalanceChange,
   BatchSimulation,
@@ -26,9 +28,13 @@ export type {
   DecodedInstruction,
   DecoderKind,
   Finding,
+  MultisigSummary,
   ProgramInfo,
   ProgramLoader,
+  ProposalSummary,
   Provenance,
+  RawTransactionSummary,
+  ReportInput,
   Severity,
   SimulationNote,
   SimulationNoteKey,

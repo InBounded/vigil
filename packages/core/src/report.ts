@@ -1,13 +1,20 @@
 import type { Address } from "@solana/kit";
+import type { TransactionVersion, V1TransactionConfig } from "./decoders/transaction.js";
 import type { AccountLabel } from "./labels/labels.js";
+import type { Cluster } from "./rpc/types.js";
 import type { SanitizerNote } from "./sanitize/args.js";
+import type {
+  SquadsMultisigSummary,
+  SquadsProposalStatus,
+  SquadsProposalVotes,
+  SquadsTransactionKind,
+} from "./squads/types.js";
+import type { TokenInfo } from "./tokens/enrich.js";
 
 /**
  * Where a piece of information in a report comes from. See `AGENTS.md` → "Fidelity above all".
  *
- * Only the subset of the `AnalysisReport` contract needed so far (decoding in Phase 3, findings and
- * the inputs of the risk rules in Phase 4) is defined here; the report itself is assembled in a
- * later phase.
+ * The whole `AnalysisReport` contract lives in this file; `analyze/` assembles it.
  */
 export type Provenance =
   | "onchain"
@@ -100,6 +107,7 @@ export const ANALYSIS_GAP_CODES = [
   "PROGRAM_VERIFICATION_DISABLED",
   "RPC_MISMATCH",
   "RPC_CROSS_CHECK_FAILED",
+  "HISTORY_UNAVAILABLE",
 ] as const;
 
 export type AnalysisGapCode = (typeof ANALYSIS_GAP_CODES)[number];
@@ -348,3 +356,73 @@ export type ConfigAction =
   | { readonly kind: "removeSpendingLimit"; readonly spendingLimit: Address }
   | { readonly kind: "setRentCollector"; readonly newRentCollector: Address | null }
   | { readonly kind: "setConfigAuthority"; readonly newConfigAuthority: Address };
+
+/** The multisig a proposal belongs to, as read on chain. */
+export type MultisigSummary = SquadsMultisigSummary;
+
+/** The proposal being analysed, as read on chain. */
+export interface ProposalSummary {
+  readonly transactionIndex: bigint;
+  /** The `VaultTransaction`, `ConfigTransaction` or `Batch` account. */
+  readonly transactionAddress: Address;
+  /** `null` when no proposal account exists yet (a transaction created without a proposal). */
+  readonly proposalAddress: Address | null;
+  readonly status: SquadsProposalStatus | null;
+  readonly votes: SquadsProposalVotes | null;
+  /** At or below the multisig's `staleTransactionIndex`: can no longer be approved or executed. */
+  readonly isStale: boolean;
+  /** Vault the transaction executes from (vault and batch proposals). */
+  readonly vaultIndex?: number;
+  /** Batch items found (batch proposals), 1-based. */
+  readonly batchItems?: readonly number[];
+}
+
+/** Facts about the transaction given in raw-transaction mode. */
+export interface RawTransactionSummary {
+  readonly version: TransactionVersion;
+  readonly feePayer: Address;
+  readonly signatureCount: number;
+  readonly transactionConfig?: V1TransactionConfig;
+}
+
+export type ReportInput =
+  | {
+      readonly kind: "squads-proposal";
+      readonly multisig: Address;
+      readonly transactionIndex: bigint;
+    }
+  | { readonly kind: "raw-transaction"; readonly sha256: string };
+
+/**
+ * The result of one analysis: everything the CLI and the web app show, and nothing they compute
+ * themselves. Serialized with `serializeReport` (bigint as decimal strings, keys sorted), described
+ * by `docs/report.schema.json`.
+ */
+export interface AnalysisReport {
+  readonly schemaVersion: 1;
+  /** ISO 8601, from the injected clock. */
+  readonly generatedAt: string;
+  /** From the RPC's genesis hash, never from what the user said. */
+  readonly cluster: Cluster;
+  /** Host of the RPC endpoint only (never the path or query, which may hold an API key). */
+  readonly rpcHost: string;
+  /** Slot the analysis started at; every read is at or after it. */
+  readonly contextSlot: bigint;
+  readonly input: ReportInput;
+  readonly multisig?: MultisigSummary;
+  readonly proposal?: ProposalSummary;
+  readonly transactionKind?: SquadsTransactionKind;
+  readonly rawTransaction?: RawTransactionSummary;
+  readonly instructions: readonly DecodedInstruction[];
+  readonly configActions?: readonly ConfigAction[];
+  /** Tokens the instructions move or name (decimals, registry or declared names). */
+  readonly tokens: readonly TokenInfo[];
+  readonly programs: readonly ProgramInfo[];
+  readonly simulation?: SimulationOutcome;
+  readonly findings: readonly Finding[];
+  readonly verdict: Verdict;
+  readonly completeness: {
+    readonly complete: boolean;
+    readonly gaps: readonly AnalysisGap[];
+  };
+}
