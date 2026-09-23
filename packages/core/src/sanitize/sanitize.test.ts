@@ -26,12 +26,12 @@ function isRemoved(codePoint: number, kind: SanitizeKind): boolean {
 describe("sanitizeOnchainString: bidi", () => {
   it("removes a right-to-left override hiding a file extension (the classic RLO spoof)", () => {
     // Displays as "USDC exe.gnp" reversed tail; the raw string ends in "gnp.exe".
-    const result = sanitizeOnchainString("USDC‮gnp.exe", "name");
+    const result = sanitizeOnchainString("USDC\u202Egnp.exe", "name");
     expect(result).toEqual({ flags: ["bidi-removed"], modified: true, text: "USDCgnp.exe" });
   });
 
   it("removes every bidi control listed in the reference, including isolates and marks", () => {
-    const input = "a‪b‫c‬d‭e⁦f⁧g⁨h⁩i‎j‏k؜l";
+    const input = "a\u202Ab\u202Bc\u202Cd\u202De\u2066f\u2067g\u2068h\u2069i\u200Ej\u200Fk\u061Cl";
     const result = sanitizeOnchainString(input, "text");
     expect(result.text).toBe("abcdefghijkl");
     expect(result.flags).toEqual(["bidi-removed"]);
@@ -40,12 +40,12 @@ describe("sanitizeOnchainString: bidi", () => {
 
 describe("sanitizeOnchainString: zero-width", () => {
   it("removes zero-width characters that make a look-alike of a known symbol", () => {
-    const result = sanitizeOnchainString("US​DC", "symbol");
+    const result = sanitizeOnchainString("US\u200BDC", "symbol");
     expect(result).toEqual({ flags: ["zero-width-removed"], modified: true, text: "USDC" });
   });
 
   it("removes ZWNJ, ZWJ, word joiner and BOM", () => {
-    const result = sanitizeOnchainString("﻿J‌U‍P⁠", "name");
+    const result = sanitizeOnchainString("\uFEFFJ\u200CU\u200DP\u2060", "name");
     expect(result.text).toBe("JUP");
     expect(result.flags).toEqual(["zero-width-removed"]);
   });
@@ -53,8 +53,8 @@ describe("sanitizeOnchainString: zero-width", () => {
 
 describe("sanitizeOnchainString: homoglyphs", () => {
   it("flags a symbol spelled with Cyrillic look-alikes as non-ASCII, without changing it", () => {
-    // "USDC" with Cyrillic Ѕ (U+0405) and С (U+0421): renders identically in most fonts.
-    const input = "UЅDС";
+    // "USDC" with Cyrillic \u0405 (U+0405) and \u0421 (U+0421): renders identically in most fonts.
+    const input = "U\u0405D\u0421";
     const result = sanitizeOnchainString(input, "symbol");
     expect(result.text).toBe(input);
     expect(result.modified).toBe(false);
@@ -62,14 +62,14 @@ describe("sanitizeOnchainString: homoglyphs", () => {
   });
 
   it("flags a name mixing Latin with Greek (omicron in place of o)", () => {
-    const result = sanitizeOnchainString("Bοnk", "name");
+    const result = sanitizeOnchainString("B\u03BFnk", "name");
     expect(result.flags).toEqual(["mixed-scripts"]);
     expect(result.modified).toBe(false);
   });
 
   it("does not flag a name entirely in one non-Latin script", () => {
-    expect(sanitizeOnchainString("Рубль", "name").flags).toEqual([]);
-    expect(sanitizeOnchainString("Σόλανα", "name").flags).toEqual([]);
+    expect(sanitizeOnchainString("\u0420\u0443\u0431\u043B\u044C", "name").flags).toEqual([]);
+    expect(sanitizeOnchainString("\u03A3\u03CC\u03BB\u03B1\u03BD\u03B1", "name").flags).toEqual([]);
   });
 
   it("flags non-ASCII in symbols only; a non-ASCII name is not suspicious by itself", () => {
@@ -104,7 +104,7 @@ describe("sanitizeOnchainString: control characters and memos", () => {
   });
 
   it("does not flag mixed scripts in memos (free text), but still strips bidi there", () => {
-    const result = sanitizeOnchainString("Pay руб ‮ok", "memo");
+    const result = sanitizeOnchainString("Pay \u0440\u0443\u0431 \u202Eok", "memo");
     expect(result.flags).toEqual(["bidi-removed"]);
   });
 });
@@ -125,7 +125,7 @@ describe("sanitizeOnchainString: truncation", () => {
   });
 
   it("truncates after removing, so hidden characters cannot push visible ones out", () => {
-    const result = sanitizeOnchainString(`${"​".repeat(100)}USDC`, "symbol");
+    const result = sanitizeOnchainString(`${"\u200B".repeat(100)}USDC`, "symbol");
     expect(result.text).toBe("USDC");
     expect(result.flags).toEqual(["zero-width-removed"]);
   });
@@ -135,7 +135,7 @@ describe("sanitizeOnchainString: properties", () => {
   const kinds = fc.constantFrom<SanitizeKind>("name", "symbol", "memo", "text");
   const hostile = fc.string({
     unit: fc.oneof(
-      fc.constantFrom("‮", "⁦", "​", "﻿", "\u0000", "\n", "\u0085", "؜"),
+      fc.constantFrom("\u202E", "\u2066", "\u200B", "\uFEFF", "\u0000", "\n", "\u0085", "\u061C"),
       fc.string({ maxLength: 1, minLength: 1, unit: "grapheme" }),
     ),
   });
@@ -160,14 +160,14 @@ describe("sanitizeArgs", () => {
   it("sanitizes nested strings, treats `memo` fields as memos, and reports each change", () => {
     const { args, notes } = sanitizeArgs({
       amount: 5n,
-      args: { memo: "hi\nthere‮", seed: "st​ake" },
-      items: [{ name: "Bοnk" }],
+      args: { memo: "hi\nthere\u202E", seed: "st\u200Bake" },
+      items: [{ name: "B\u03BFnk" }],
       memo: "a\nb",
     });
     expect(args).toEqual({
       amount: 5n,
       args: { memo: "hi\nthere", seed: "stake" },
-      items: [{ name: "Bοnk" }],
+      items: [{ name: "B\u03BFnk" }],
       memo: "a\nb",
     });
     expect(notes).toEqual([
