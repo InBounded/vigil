@@ -11,4 +11,4 @@ export type { AnalysisErrorCode } from "./errors.js";
 export { AnalysisError } from "./errors.js";
 export type { RecentDestinations, RecentDestinationsInput } from "./history.js";
 export { gatherRecentDestinations } from "./history.js";
-export { reportToJson, serializeReport } from "./serialize.js";
+export { reportToJson, serializeReport, toStableJson } from "./serialize.js";

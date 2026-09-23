@@ -14,6 +14,11 @@ export function reportToJson(report: AnalysisReport): unknown {
   return toJsonValue(report);
 }
 
+/** Any value as JSON with the same rules as `serializeReport` (sorted keys, bigint as strings). */
+export function toStableJson(value: unknown, indent = 2): string {
+  return JSON.stringify(toJsonValue(value), null, indent);
+}
+
 function toJsonValue(value: unknown): unknown {
   if (typeof value === "bigint") {
     return value.toString();
