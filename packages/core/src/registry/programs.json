@@ -1,0 +1,85 @@
+{
+  "$comment": "Curated program labels. Every address confirmed against the source named in `source` (2026-09-22). Keep small; see docs/DECISIONS.md.",
+  "programs": [
+    {
+      "address": "11111111111111111111111111111111",
+      "name": "System Program",
+      "source": "@solana-program/system@0.15.0 SYSTEM_PROGRAM_ADDRESS"
+    },
+    {
+      "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "name": "SPL Token",
+      "source": "@solana-program/token@0.17.0 TOKEN_PROGRAM_ADDRESS"
+    },
+    {
+      "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+      "name": "Token-2022",
+      "source": "@solana-program/token-2022@0.19.0 TOKEN_2022_PROGRAM_ADDRESS"
+    },
+    {
+      "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+      "name": "Associated Token Account Program",
+      "source": "@solana-program/token@0.17.0 ASSOCIATED_TOKEN_PROGRAM_ADDRESS"
+    },
+    {
+      "address": "ComputeBudget111111111111111111111111111111",
+      "name": "Compute Budget Program",
+      "source": "@solana-program/compute-budget@0.19.0 COMPUTE_BUDGET_PROGRAM_ADDRESS"
+    },
+    {
+      "address": "BPFLoaderUpgradeab1e11111111111111111111111",
+      "name": "BPF Upgradeable Loader",
+      "source": "@solana-program/loader-v3@0.7.0 LOADER_V3_PROGRAM_ADDRESS"
+    },
+    {
+      "address": "AddressLookupTab1e1111111111111111111111111",
+      "name": "Address Lookup Table Program",
+      "source": "@solana-program/address-lookup-table@0.15.0 ADDRESS_LOOKUP_TABLE_PROGRAM_ADDRESS"
+    },
+    {
+      "address": "Memo4c2pN8afCj432Lb7RMVKi9PbQnnW7ewFFaV3oAH",
+      "name": "Memo Program",
+      "source": "@solana-program/memo@0.15.0 MEMO_PROGRAM_ADDRESS (current)"
+    },
+    {
+      "address": "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
+      "name": "Memo Program",
+      "source": "@solana-program/memo@0.15.0 LEGACY_MEMO_PROGRAM_ADDRESS_V3"
+    },
+    {
+      "address": "Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo",
+      "name": "Memo Program",
+      "source": "@solana-program/memo@0.15.0 LEGACY_MEMO_PROGRAM_ADDRESS_V1"
+    },
+    {
+      "address": "Stake11111111111111111111111111111111111111",
+      "name": "Stake Program",
+      "source": "@solana-program/stake@0.10.0 STAKE_PROGRAM_ADDRESS"
+    },
+    {
+      "address": "Vote111111111111111111111111111111111111111",
+      "name": "Vote Program",
+      "source": "anza-xyz/solana-sdk sdk-ids/src/lib.rs `pub mod vote` declare_id"
+    },
+    {
+      "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s",
+      "name": "Metaplex Token Metadata",
+      "source": "metaplex-foundation/mpl-token-metadata@353d01be programs/token-metadata/program/src/lib.rs declare_id"
+    },
+    {
+      "address": "ProgM6JCCvbYkfKqJYHePx4xxSUSqJp7rh8Lyv7nk7S",
+      "name": "Program Metadata",
+      "source": "@solana-program/program-metadata@0.10.0 PROGRAM_METADATA_PROGRAM_ADDRESS"
+    },
+    {
+      "address": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+      "name": "Squads Multisig v4",
+      "source": "Squads v4 IDL pinned in Phase 2 (see docs/DECISIONS.md), generated SQUADS_MULTISIG_PROGRAM_PROGRAM_ADDRESS"
+    },
+    {
+      "address": "SMPLecH534NA9acpos4G6x7uf3LWbCAwZQE9e8ZekMu",
+      "name": "Squads Multisig v3 (legacy)",
+      "source": "Squads-Protocol/squads-mpl programs/squads-mpl/src/lib.rs declare_id"
+    }
+  ]
+}
