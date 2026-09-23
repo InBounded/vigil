@@ -11,9 +11,10 @@
   "scripts": {
     "lint": "biome check .",
     "typecheck": "pnpm -r run typecheck && tsc -p scripts/tsconfig.json --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
     "build": "pnpm -r run build",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "docs:rules": "tsx scripts/generate-rules-doc.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
