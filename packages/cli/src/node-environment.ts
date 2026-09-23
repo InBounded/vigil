@@ -21,14 +21,27 @@ export async function nodeEnvironment(): Promise<CliEnvironment> {
   };
 }
 
+/**
+ * A process stream for the CLI. When the reader goes away (`vigil … | head`), writes stop quietly
+ * instead of crashing with EPIPE; the command still finishes and exits with its own code.
+ */
 function stream(target: NodeJS.WriteStream): OutputStream {
+  let closed = false;
+  target.on("error", (error: NodeJS.ErrnoException) => {
+    if (error.code !== "EPIPE") {
+      throw error;
+    }
+    closed = true;
+  });
   return {
     get columns() {
       return target.columns;
     },
     isTTY: target.isTTY === true,
     write: (text) => {
-      target.write(text);
+      if (!closed) {
+        target.write(text);
+      }
     },
   };
 }

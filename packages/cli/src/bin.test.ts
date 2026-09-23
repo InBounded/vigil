@@ -86,6 +86,23 @@ describe("the built vigil binary", () => {
     expect(result.stderr).toBe("");
   });
 
+  it("stops quietly when the reader closes the pipe (vigil … | head)", async () => {
+    const result = await new Promise<Spawned>((resolve) => {
+      const child = execFile(
+        process.execPath,
+        [BIN, "decode", BATCH_MULTISIG, "2268", "--verbose"],
+        { env: { PATH: process.env.PATH ?? "", ...fixtureEnv("list-batch-drafts") } },
+        (error, _stdout, stderr) => {
+          const code = error === null ? 0 : typeof error.code === "number" ? error.code : -1;
+          resolve({ code, stderr, stdout: "" });
+        },
+      );
+      child.stdout?.destroy();
+    });
+    expect(result.stderr).not.toContain("EPIPE");
+    expect(result.code).toBe(0);
+  });
+
   it("--version prints the package version; invalid input exits 3", async () => {
     const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8")) as {
       version: string;
