@@ -2,12 +2,14 @@ import type { Address } from "@solana/kit";
 import type { AccountLabel } from "../labels/labels.js";
 import {
   type AnalysisGap,
+  type ConfigAction,
   type DecodedInstruction,
   type Finding,
   SIMULATION_SNAPSHOT_NOTE,
   type SimulationNote,
   type SimulationOutcome,
 } from "../report.js";
+import type { TokenInfo } from "../tokens/enrich.js";
 import en from "./en.json" with { type: "json" };
 import ptPT from "./pt-PT.json" with { type: "json" };
 
@@ -74,6 +76,15 @@ export function t(
   return template.replace(PLACEHOLDER, (_match, name: string) => params[name] ?? "");
 }
 
+/**
+ * How addresses appear inside rendered sentences. `short` (default): `CPMM…KP1C`, or the label
+ * alone. `full`: every address in full, after its label when it has one (the CLI: a signer must be
+ * able to compare every character).
+ */
+export interface RenderOptions {
+  readonly addresses?: "short" | "full";
+}
+
 export function shortAddress(address: string): string {
   return address.length <= 11 ? address : `${address.slice(0, 4)}\u2026${address.slice(-4)}`;
 }
@@ -96,18 +107,49 @@ function groupDigits(whole: string, locale: Locale): string {
   return digits < minDigitsToGroup ? whole : whole.replace(/\B(?=(\d{3})+(?!\d))/g, group);
 }
 
-/** Label text for an account. `short` is the inline form used inside sentences. */
+/**
+ * Label text for an account. `short` is the inline form used inside sentences. With
+ * `options.addresses` `"full"` and an `address`, the full address is always part of the text.
+ */
 export function renderLabel(
   label: AccountLabel,
   locale: Locale,
   short = false,
   address?: string,
+  options: RenderOptions = {},
 ): string {
+  const full = options.addresses === "full";
+  // `.full`: the inline form to use next to the account's own full address, where the `.short`
+  // form would name another account (a vault's token account is "Vault #0" in short sentences).
   const key =
-    short && CATALOGS.en[`${label.key}.short`] !== undefined ? `${label.key}.short` : label.key;
+    short && full && CATALOGS.en[`${label.key}.full`] !== undefined
+      ? `${label.key}.full`
+      : short && CATALOGS.en[`${label.key}.short`] !== undefined
+        ? `${label.key}.short`
+        : label.key;
   const params =
-    address === undefined ? label.params : { ...label.params, address: shortAddress(address) };
-  return t(key, locale, params);
+    address === undefined
+      ? label.params
+      : { ...label.params, address: full ? address : shortAddress(address) };
+  const text = t(key, locale, params);
+  const template = CATALOGS[locale][key] ?? CATALOGS.en[key] ?? key;
+  return full && address !== undefined && !template.includes("{address")
+    ? `${text} (${address})`
+    : text;
+}
+
+/** An address inside a sentence: its label if it has one, and the address in the chosen form. */
+function addressText(
+  value: string,
+  labels: ReadonlyMap<Address, AccountLabel>,
+  locale: Locale,
+  options: RenderOptions,
+): string {
+  const label = labels.get(value as Address);
+  if (label === undefined) {
+    return options.addresses === "full" ? value : shortAddress(value);
+  }
+  return renderLabel(label, locale, true, value, options);
 }
 
 export function renderGap(gap: AnalysisGap, locale: Locale): string {
@@ -115,7 +157,11 @@ export function renderGap(gap: AnalysisGap, locale: Locale): string {
 }
 
 /** The instruction's summary as a sentence, e.g. "Transfers 250,000 USDC from Vault #0 to Gh3w\u2026Lq7m". */
-export function renderSummary(instruction: DecodedInstruction, locale: Locale): Rendered {
+export function renderSummary(
+  instruction: DecodedInstruction,
+  locale: Locale,
+  options: RenderOptions = {},
+): Rendered {
   const summary = instruction.summary;
   if (summary === undefined) {
     return { missing: [], text: t("ix.undecoded", locale) };
@@ -135,6 +181,7 @@ export function renderSummary(instruction: DecodedInstruction, locale: Locale): 
     labels,
     locale,
     (name, value) => value === "none" && nulls.has(name),
+    options,
   );
 }
 
@@ -147,6 +194,7 @@ export function renderFinding(
   finding: Finding,
   locale: Locale,
   instructions: readonly DecodedInstruction[] = [],
+  options: RenderOptions = {},
 ): Rendered {
   const labels = new Map<Address, AccountLabel>();
   const visit = (list: readonly DecodedInstruction[]): void => {
@@ -165,6 +213,7 @@ export function renderFinding(
     labels,
     locale,
     (_name, value) => value === "none",
+    options,
   );
   return finding.params.proposed === "true"
     ? { missing: rendered.missing, text: `${rendered.text} ${t("finding.proposed", locale)}` }
@@ -181,6 +230,7 @@ export function renderSimulationNotes(
   outcome: SimulationOutcome,
   locale: Locale,
   instructions: readonly DecodedInstruction[] = [],
+  options: RenderOptions = {},
 ): Rendered[] {
   const labels = new Map<Address, AccountLabel>();
   const visit = (list: readonly DecodedInstruction[]): void => {
@@ -219,10 +269,91 @@ export function renderSimulationNotes(
     out.push(
       CATALOGS[locale][note.key] === undefined
         ? { missing: [note.key], text: note.key }
-        : renderTemplate(note.key, note.params, labels, locale, () => false),
+        : renderTemplate(note.key, note.params, labels, locale, () => false, options),
     );
   }
   return out;
+}
+
+/** `Pubkey::default()`: a Squads spending limit on this mint is a limit on SOL. */
+const SOL_MINT_SENTINEL = "11111111111111111111111111111111";
+
+/**
+ * A settings change of a Squads config proposal as a sentence. Addresses are labelled with the
+ * labels found on `instructions`; token amounts use `tokens` (from the report) for decimals and
+ * registry symbols, else they are shown in base units.
+ */
+export function renderConfigAction(
+  action: ConfigAction,
+  locale: Locale,
+  context: {
+    readonly instructions?: readonly DecodedInstruction[];
+    readonly tokens?: readonly TokenInfo[];
+  } = {},
+  options: RenderOptions = {},
+): Rendered {
+  const labels = new Map<Address, AccountLabel>();
+  const visit = (list: readonly DecodedInstruction[]): void => {
+    for (const instruction of list) {
+      collectLabels(instruction, labels);
+      visit(instruction.inner ?? []);
+    }
+  };
+  visit(context.instructions ?? []);
+  let key = `configAction.${action.kind}`;
+  let params: Record<string, string>;
+  switch (action.kind) {
+    case "addMember":
+      params = {
+        member: action.member,
+        permissions: action.permissions.length === 0 ? "none" : action.permissions.join(","),
+      };
+      break;
+    case "removeMember":
+      params = { member: action.member };
+      break;
+    case "changeThreshold":
+      params = { newThreshold: String(action.newThreshold) };
+      break;
+    case "setTimeLock":
+      params = { newTimeLockSeconds: String(action.newTimeLockSeconds) };
+      break;
+    case "addSpendingLimit": {
+      const token = context.tokens?.find((info) => info.mint === action.mint);
+      if (action.mint === SOL_MINT_SENTINEL) {
+        key = "configAction.addSpendingLimitSol";
+      }
+      params = {
+        amount: String(action.amount),
+        destinations: action.destinations.join(","),
+        members: action.members.join(","),
+        mint: action.mint,
+        period: action.period,
+        vaultIndex: String(action.vaultIndex),
+        ...(token === undefined ? {} : { decimals: String(token.decimals) }),
+        ...(token?.registry === undefined ? {} : { symbol: token.registry.symbol }),
+      };
+      break;
+    }
+    case "removeSpendingLimit":
+      params = { spendingLimit: action.spendingLimit };
+      break;
+    case "setRentCollector":
+      params =
+        action.newRentCollector === null ? {} : { newRentCollector: action.newRentCollector };
+      break;
+    case "setConfigAuthority":
+      params = { newConfigAuthority: action.newConfigAuthority };
+      break;
+  }
+  return renderTemplate(
+    key,
+    params,
+    labels,
+    locale,
+    (name, value) => (name === "permissions" && value === "none") || value === "",
+    options,
+  );
 }
 
 /** `true` when a param's value means "no value" (see the module comment). */
@@ -235,6 +366,7 @@ function renderTemplate(
   labels: ReadonlyMap<Address, AccountLabel>,
   locale: Locale,
   isNull: IsNull,
+  options: RenderOptions,
 ): Rendered {
   const catalog = CATALOGS[locale];
   let key = baseKey;
@@ -260,7 +392,7 @@ function renderTemplate(
       return t("common.unknown", locale);
     }
     const isNone = value !== undefined && isNull(name, value);
-    return formatParam(value ?? "", type, params, labels, locale, missing, name, isNone);
+    return formatParam(value ?? "", type, params, labels, locale, missing, name, isNone, options);
   });
   return { missing, text };
 }
@@ -274,6 +406,7 @@ function formatParam(
   missing: string[],
   name: string,
   isNone: boolean,
+  options: RenderOptions,
 ): string {
   switch (type) {
     case "address": {
@@ -285,8 +418,7 @@ function formatParam(
       if (value === "unknown") {
         return t("common.unknown", locale);
       }
-      const label = labels.get(value as Address);
-      return label === undefined ? shortAddress(value) : renderLabel(label, locale, true, value);
+      return addressText(value, labels, locale, options);
     }
     case "sol":
       return t("fmt.sol", locale, { amount: formatAmount(value, 9, locale) });
@@ -297,12 +429,18 @@ function formatParam(
     case "stakeAuthorize":
       return CATALOGS[locale][`stakeAuthorize.${value}`] ?? value;
     case "token":
-      return formatToken(params, labels, locale, missing, name);
+      return formatToken(params, labels, locale, missing, name, options);
     case "text":
       // On-chain text (memos, declared names, error details): verbatim, never translated.
       return value;
     case "duration":
       return /^\d+$/.test(value) ? formatDuration(BigInt(value), locale) : value;
+    case "addresses":
+      return value
+        .split(",")
+        .filter((item) => item !== "")
+        .map((item) => addressText(item, labels, locale, options))
+        .join(", ");
     case "permissions":
       return isNone
         ? t("common.none", locale)
@@ -326,6 +464,7 @@ function formatToken(
   locale: Locale,
   missing: string[],
   name: string,
+  options: RenderOptions,
 ): string {
   const raw = params[name];
   if (raw === undefined || !/^\d+$/.test(raw)) {
@@ -339,7 +478,7 @@ function formatToken(
       ? t("fmt.token.rawNoMint", locale, { amount: groupDigits(raw, locale) })
       : t("fmt.token.raw", locale, {
           amount: groupDigits(raw, locale),
-          mint: mintText(mint, labels, locale),
+          mint: mintText(mint, labels, locale, options),
         });
   }
   const amount = formatAmount(raw, decimals, locale);
@@ -347,7 +486,7 @@ function formatToken(
     return t("fmt.token.registry", locale, { amount, symbol: params.symbol });
   }
   const mintShown =
-    mint === undefined ? t("common.unknown", locale) : mintText(mint, labels, locale);
+    mint === undefined ? t("common.unknown", locale) : mintText(mint, labels, locale, options);
   if (params.declaredName !== undefined) {
     return t("fmt.token.declared", locale, {
       amount,
@@ -383,9 +522,9 @@ function mintText(
   mint: string,
   labels: ReadonlyMap<Address, AccountLabel>,
   locale: Locale,
+  options: RenderOptions,
 ): string {
-  const label = labels.get(mint as Address);
-  return label === undefined ? shortAddress(mint) : renderLabel(label, locale, true, mint);
+  return addressText(mint, labels, locale, options);
 }
 
 function collectLabels(instruction: DecodedInstruction, into: Map<Address, AccountLabel>): void {

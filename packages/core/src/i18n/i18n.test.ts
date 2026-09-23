@@ -11,16 +11,18 @@ import { annotateInstructions } from "../annotate.js";
 import { PROGRAM_DECODERS } from "../decoders/decode.js";
 import { TOKEN_2022_AUTHORITY_TYPES } from "../decoders/native/token-2022.js";
 import { decodeRawTransaction } from "../decoders/transaction.js";
-import { ANALYSIS_GAP_CODES, type DecodedInstruction } from "../report.js";
+import { ANALYSIS_GAP_CODES, type ConfigAction, type DecodedInstruction } from "../report.js";
 import { FixtureRpcClient } from "../rpc/fixture-client.js";
 import { loadFixtureFile } from "../rpc/fixture-file.js";
 import type { FixtureData } from "../rpc/index.js";
 import { SquadsV4Adapter } from "../squads/adapter.js";
+import { configActionsFromInstruction } from "../squads/config-actions.js";
 import { addr, decodeBuilt, signer } from "../test-support/rules.js";
 import {
   CATALOGS,
   formatAmount,
   LOCALES,
+  renderConfigAction,
   renderGap,
   renderSummary,
   shortAddress,
@@ -172,6 +174,16 @@ describe("summaries of real mainnet instructions", () => {
     expect(pt.text).toBe(
       "Transfere 13\u00A0446,797098256 do token BjcR…EroT (nome declarado “IdleMine”, símbolo “IDLE”) de Cofre n.º 0 para 99pb…6WHB (conta de token 6jzs…4LKC)",
     );
+    // With full addresses (the CLI), every address is complete and follows its label.
+    const full = renderSummary(idle, "en", { addresses: "full" });
+    expect(full.missing).toEqual([]);
+    const vault = idle.accounts.find((a) => a.role === "authority")?.address;
+    const destination = idle.accounts.find((a) => a.role === "destination")?.address;
+    const source = idle.accounts.find((a) => a.role === "source")?.address;
+    expect(full.text).toContain(`from Vault #0’s token account (${source}) to `);
+    expect(vault).toBeDefined();
+    expect(full.text).toContain(`(token account ${destination})`);
+    expect(full.text).not.toContain("\u2026");
     const create = all.find((ix) => ix.name === "vaultTransactionCreate");
     expect(create && renderSummary(create, "en").text).toBe(
       "Creates a transaction for this multisig to run from vault #0 (its instructions are listed below)",
@@ -291,5 +303,92 @@ describe("on-chain text in summaries is never translated", () => {
       renderSummary({ ...instruction, summary: { ...summary, nullParams: ["newAuthority"] } }, "en")
         .text,
     ).toBe(`Removes the mint authority of ${shortAddress(A)} permanently`);
+  });
+});
+
+describe("settings changes of config proposals", () => {
+  it("renders every action of the real config transactions in both languages", async () => {
+    let rendered = 0;
+    for (const name of ["config-transaction", "config-transaction-2"]) {
+      const data = await loadFixtureFile(`${FIXTURES}${name}.json`);
+      const rpc = new FixtureRpcClient(data);
+      for (const tx of data.transactions.values()) {
+        const decoded = await decodeRawTransaction(rpc, tx.transactionBase64);
+        for (const instruction of flatten(decoded.instructions)) {
+          for (const action of configActionsFromInstruction(instruction) ?? []) {
+            for (const locale of LOCALES) {
+              const text = renderConfigAction(action, locale, {}, { addresses: "full" });
+              expect(text.missing, `${action.kind} ${locale}`).toEqual([]);
+              expect(text.text).not.toContain("{");
+            }
+            rendered++;
+          }
+        }
+      }
+    }
+    expect(rendered).toBeGreaterThan(0);
+  });
+
+  it("covers every kind of action, including a removed rent collector and SOL limits", () => {
+    const member = addr(7);
+    const actions: ConfigAction[] = [
+      { kind: "addMember", member, permissions: ["Initiate", "Vote"] },
+      { kind: "addMember", member, permissions: [] },
+      { kind: "removeMember", member },
+      { kind: "changeThreshold", newThreshold: 3 },
+      { kind: "setTimeLock", newTimeLockSeconds: 86_400 },
+      {
+        amount: 5_000_000n,
+        createKey: addr(8),
+        destinations: [],
+        kind: "addSpendingLimit",
+        members: [member],
+        mint: "11111111111111111111111111111111" as Address,
+        period: "Day",
+        vaultIndex: 0,
+      },
+      {
+        amount: 5_000_000n,
+        createKey: addr(8),
+        destinations: [addr(9)],
+        kind: "addSpendingLimit",
+        members: [member],
+        mint: address("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
+        period: "Week",
+        vaultIndex: 1,
+      },
+      { kind: "removeSpendingLimit", spendingLimit: addr(10) },
+      { kind: "setRentCollector", newRentCollector: null },
+      { kind: "setRentCollector", newRentCollector: addr(11) },
+      { kind: "setConfigAuthority", newConfigAuthority: addr(12) },
+    ];
+    const en = actions.map((action) => renderConfigAction(action, "en").text);
+    expect(en).toEqual([
+      `Add ${shortAddress(member)} as a member, with permissions: initiate, vote`,
+      `Add ${shortAddress(member)} as a member, with permissions: none`,
+      `Remove member ${shortAddress(member)}`,
+      "Change the approvals needed to 3",
+      "Set the waiting time before execution to 1 d",
+      `Add a spending limit: vault #0 may send 0.005 SOL per day without a vote; members who may use it: ${shortAddress(member)}; to any destination`,
+      `Add a spending limit: vault #1 may send 5,000,000 base units of token EPjF…Dt1v (decimals unknown) per week without a vote; members who may use it: ${shortAddress(member)}; destinations: ${shortAddress(addr(9))}`,
+      `Remove spending limit ${shortAddress(addr(10))}`,
+      "Remove the rent collector",
+      `Set the rent collector to ${shortAddress(addr(11))}`,
+      `Change the config authority to ${shortAddress(addr(12))}`,
+    ]);
+    const usdc = renderConfigAction(actions[6] as ConfigAction, "pt-PT", {
+      tokens: [
+        {
+          decimals: 6,
+          mint: address("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
+          registry: { name: "USD Coin", symbol: "USDC" },
+          tokenProgram: address("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+        },
+      ],
+    });
+    expect(usdc.text).toContain("pode enviar 5 USDC por semana sem votação");
+    for (const action of actions) {
+      expect(renderConfigAction(action, "pt-PT").missing).toEqual([]);
+    }
   });
 });

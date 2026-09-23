@@ -1,9 +1,10 @@
-export type { Locale, Rendered } from "./render.js";
+export type { Locale, Rendered, RenderOptions } from "./render.js";
 export {
   CATALOGS,
   formatAmount,
   formatDuration,
   LOCALES,
+  renderConfigAction,
   renderFinding,
   renderGap,
   renderLabel,
