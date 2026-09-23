@@ -1,4 +1,5 @@
 export { SquadsV4Adapter } from "./adapter.js";
+export { configActionsFromInstruction, toConfigAction } from "./config-actions.js";
 export type { MemberPermission } from "./decode.js";
 export { decodePermissions, matchesDiscriminator, toEncodedAccount } from "./decode.js";
 export { MultisigAccountNotFoundError, NotASquadsMultisigError } from "./errors.js";
