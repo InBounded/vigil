@@ -7,8 +7,8 @@ const strictUtf8 = new TextDecoder("utf-8", { fatal: true });
 /**
  * Memo: the instruction data *is* the memo, as UTF-8. Decoded strictly (the Memo program rejects
  * invalid UTF-8, so a lenient decode would show text that can never land). Every account is an
- * optional signer with no named role. The text is attacker-controlled and returned raw here; the
- * sanitizer (a later phase) must run before it reaches any interface.
+ * optional signer with no named role. The text is attacker-controlled: `decodeInstruction` runs it
+ * through the sanitizer (as a memo) before it is placed in the report.
  */
 export const memoDecoder: ProgramDecoder = {
   decode(instruction: InstructionInput): ProgramDecodeResult {

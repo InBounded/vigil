@@ -1,4 +1,5 @@
 import type { Address } from "@solana/kit";
+import type { SanitizerNote } from "./sanitize/args.js";
 
 /**
  * Where a piece of information in a report comes from. See `AGENTS.md` → "Fidelity above all".
@@ -45,6 +46,12 @@ export interface DecodedInstruction {
    * `Batch`. Not in the original `AGENTS.md` contract; see `docs/DECISIONS.md`.
    */
   readonly inner?: readonly DecodedInstruction[];
+  /**
+   * Strings in `args` that the sanitizer changed or flagged (`args` already holds the sanitized
+   * text). Absent when nothing was changed or flagged. Not in the original `AGENTS.md` contract;
+   * see `docs/DECISIONS.md`.
+   */
+  readonly sanitizer?: readonly SanitizerNote[];
 }
 
 export type AnalysisGapCode =

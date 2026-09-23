@@ -11,6 +11,7 @@ import type {
   DecodedInstruction,
 } from "../report.js";
 import type { RpcClient } from "../rpc/types.js";
+import { sanitizeArgs } from "../sanitize/args.js";
 import { toHex } from "./bytes.js";
 import { DecodeError } from "./errors.js";
 import { fetchLookupTables, type LookupTableEntry, type LookupTableInfo } from "./lookup-tables.js";
@@ -250,7 +251,7 @@ export function decodeInstruction(
   const accounts = instruction.accounts.map((account, i) =>
     decodedAccount(account, result.accountRoles?.[i]),
   );
-  const args = result.args ?? {};
+  const { args, notes } = sanitizeArgs(result.args ?? {});
   return {
     accounts,
     ...(result.argsNotDecoded === true ? {} : { args }),
@@ -262,6 +263,7 @@ export function decodeInstruction(
     programLabel: decoder.label,
     provenance: "onchain",
     rawDataHex: toHex(instruction.data),
+    ...(notes.length === 0 ? {} : { sanitizer: notes }),
     summary: result.summary ?? buildSummary(decoder.key, result.name, args, accounts),
   };
 }
