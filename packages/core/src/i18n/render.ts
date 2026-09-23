@@ -1,6 +1,6 @@
 import type { Address } from "@solana/kit";
 import type { AccountLabel } from "../labels/labels.js";
-import type { AnalysisGap, DecodedInstruction } from "../report.js";
+import type { AnalysisGap, DecodedInstruction, Finding } from "../report.js";
 import en from "./en.json" with { type: "json" };
 import ptPT from "./pt-PT.json" with { type: "json" };
 
@@ -12,6 +12,9 @@ import ptPT from "./pt-PT.json" with { type: "json" };
  * - `address`: the account's label if it has one, otherwise a shortened address (`Gh3w\u2026Lq7m`);
  * - `sol`: lamports as SOL; `number`: an integer with digit grouping;
  * - `token`: a token amount using the `decimals`, `symbol` / `declaredName` and `mint` params;
+ * - `text`: the value verbatim (on-chain text: never translated, even if it reads "none");
+ * - `duration`: seconds as "1 d 2 h"; `permissions`: Squads permission names, translated;
+ * - any other type: the catalog's `<type>.<value>` text if there is one, else the value;
  * - `authority`: an SPL Token / Token-2022 `AuthorityType` name; `stakeAuthorize`: a Stake
  *   `StakeAuthorize` value (0 = staker, 1 = withdrawer).
  * When a param a template needs is missing or `"none"`, and a `<key>.without.<param>` template
@@ -108,14 +111,54 @@ export function renderSummary(instruction: DecodedInstruction, locale: Locale): 
   }
   const labels = new Map<Address, AccountLabel>();
   collectLabels(instruction, labels);
-  const catalog = CATALOGS[locale];
-  let key = summary.key;
-  let template = catalog[key];
-  if (template === undefined) {
-    return { missing: [key], text: t("ix.noSummary", locale, { name: instruction.name ?? "?" }) };
+  if (CATALOGS[locale][summary.key] === undefined) {
+    return {
+      missing: [summary.key],
+      text: t("ix.noSummary", locale, { name: instruction.name ?? "?" }),
+    };
   }
+  return renderTemplate(summary.key, summary.params, labels, locale);
+}
+
+/**
+ * A finding as a sentence. Addresses are shown with the labels found on `instructions` (pass the
+ * report's instructions). A finding about an instruction inside a Squads proposal the transaction
+ * only creates ends with a sentence saying so.
+ */
+export function renderFinding(
+  finding: Finding,
+  locale: Locale,
+  instructions: readonly DecodedInstruction[] = [],
+): Rendered {
+  const labels = new Map<Address, AccountLabel>();
+  const visit = (list: readonly DecodedInstruction[]): void => {
+    for (const instruction of list) {
+      collectLabels(instruction, labels);
+      visit(instruction.inner ?? []);
+    }
+  };
+  visit(instructions);
+  if (CATALOGS[locale][finding.titleKey] === undefined) {
+    return { missing: [finding.titleKey], text: finding.titleKey };
+  }
+  const rendered = renderTemplate(finding.titleKey, finding.params, labels, locale);
+  return finding.params.proposed === "true"
+    ? { missing: rendered.missing, text: `${rendered.text} ${t("finding.proposed", locale)}` }
+    : rendered;
+}
+
+/** Fills in a catalog template (which must exist), choosing a `.without.<param>` form if needed. */
+function renderTemplate(
+  baseKey: string,
+  params: Readonly<Record<string, string>>,
+  labels: ReadonlyMap<Address, AccountLabel>,
+  locale: Locale,
+): Rendered {
+  const catalog = CATALOGS[locale];
+  let key = baseKey;
+  let template = catalog[key] ?? key;
   for (const [, name] of template.matchAll(PLACEHOLDER)) {
-    const value = name === undefined ? undefined : summary.params[name];
+    const value = name === undefined ? undefined : params[name];
     const alternative = catalog[`${key}.without.${name}`];
     if ((value === undefined || value === "none") && alternative !== undefined) {
       key = `${key}.without.${name}`;
@@ -125,12 +168,12 @@ export function renderSummary(instruction: DecodedInstruction, locale: Locale): 
   }
   const missing: string[] = [];
   const text = template.replace(PLACEHOLDER, (_match, name: string, type: string | undefined) => {
-    const value = summary.params[name];
+    const value = params[name];
     if (value === undefined && type !== "token") {
       missing.push(name);
       return t("common.unknown", locale);
     }
-    return formatParam(value ?? "", type, summary.params, labels, locale, missing, name);
+    return formatParam(value ?? "", type, params, labels, locale, missing, name);
   });
   return { missing, text };
 }
@@ -146,8 +189,8 @@ function formatParam(
 ): string {
   switch (type) {
     case "address": {
-      if (value === "none") {
-        return t("common.none", locale);
+      if (value === "none" || value === "unknown") {
+        return t(`common.${value}`, locale);
       }
       const label = labels.get(value as Address);
       return label === undefined ? shortAddress(value) : renderLabel(label, locale, true, value);
@@ -162,8 +205,25 @@ function formatParam(
       return CATALOGS[locale][`stakeAuthorize.${value}`] ?? value;
     case "token":
       return formatToken(params, labels, locale, missing, name);
+    case "text":
+      // On-chain text (memos, declared names, error details): verbatim, never translated.
+      return value;
+    case "duration":
+      return /^\d+$/.test(value) ? formatDuration(BigInt(value), locale) : value;
+    case "permissions":
+      return value === "none"
+        ? t("common.none", locale)
+        : value
+            .split(",")
+            .map((permission) => CATALOGS[locale][`permission.${permission}`] ?? permission)
+            .join(", ");
     default:
-      return value === "none" ? t("common.none", locale) : value;
+      if (value === "none") {
+        return t("common.none", locale);
+      }
+      // Any other `{name:type}`: the catalog's `<type>.<value>` text if there is one (e.g.
+      // `verification.unverified`, `period.Day`, `gap.LOOKUP_TABLE_NOT_FOUND`), else the value.
+      return type === undefined ? value : (CATALOGS[locale][`${type}.${value}`] ?? value);
   }
 }
 
@@ -204,6 +264,26 @@ function formatToken(
     });
   }
   return t("fmt.token.unknown", locale, { amount, mint: mintShown });
+}
+
+/** Seconds as "2 d 3 h 5 min" (largest units first, zero units left out; "0 s" for zero). */
+export function formatDuration(seconds: bigint, locale: Locale): string {
+  const units: readonly (readonly [string, bigint])[] = [
+    ["fmt.duration.d", 86_400n],
+    ["fmt.duration.h", 3_600n],
+    ["fmt.duration.min", 60n],
+    ["fmt.duration.s", 1n],
+  ];
+  const parts: string[] = [];
+  let rest = seconds;
+  for (const [key, size] of units) {
+    const count = rest / size;
+    rest %= size;
+    if (count > 0n) {
+      parts.push(t(key, locale, { n: groupDigits(count.toString(), locale) }));
+    }
+  }
+  return parts.length === 0 ? t("fmt.duration.s", locale, { n: "0" }) : parts.join(" ");
 }
 
 function mintText(
