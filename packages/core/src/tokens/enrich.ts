@@ -20,8 +20,14 @@ import {
 export interface TokenInfo {
   readonly mint: Address;
   readonly tokenProgram: Address;
-  /** From the mint account (`onchain`). */
+  /** From the mint account (`onchain`), or from the registry when `decimalsSource` says so. */
   readonly decimals: number;
+  /**
+   * `"registry"`: the mint account could not be read and the mint is in Vigil's curated registry,
+   * whose decimals were confirmed against the live mint (`fixtures/registry-mints.json`). Absent:
+   * read from the mint account.
+   */
+  readonly decimalsSource?: "registry";
   /** From Vigil's curated registry; the only authoritative name. */
   readonly registry?: { readonly symbol: string; readonly name: string };
   /**
@@ -154,6 +160,20 @@ export async function enrichTokenAmounts(
   const tokens = new Map<Address, TokenInfo>();
   for (const [mint, info] of mintInfos) {
     tokens.set(mint, tokenInfo(mint, info, metaplex.get(mint) ?? null, cluster));
+  }
+  // A registry mint whose account could not be read is still known: its symbol and decimals come
+  // from the curated registry. Only mints outside the registry fall back to base units (and a gap).
+  for (const mint of mints) {
+    const registry = findRegistryToken(mint, cluster);
+    if (!tokens.has(mint) && registry !== undefined) {
+      tokens.set(mint, {
+        decimals: registry.decimals,
+        decimalsSource: "registry",
+        mint,
+        registry: { name: registry.name, symbol: registry.symbol },
+        tokenProgram: registry.tokenProgram,
+      });
+    }
   }
 
   const params = new Map<DecodedInstruction, Record<string, string>>();
@@ -293,7 +313,7 @@ function rewrite(
     const summary =
       extra === undefined || instruction.summary === undefined
         ? instruction.summary
-        : { key: instruction.summary.key, params: { ...instruction.summary.params, ...extra } };
+        : { ...instruction.summary, params: { ...instruction.summary.params, ...extra } };
     return {
       ...instruction,
       ...(inner === undefined ? {} : { inner }),

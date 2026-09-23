@@ -418,10 +418,12 @@ describe("native instructions (native-instructions.json)", () => {
     if (transfer === undefined) {
       throw new Error("no USDC transfer in the fixture");
     }
+    // The fixture has no USDC mint account: symbol and decimals come from the curated registry.
     expect(transfer.summary?.params).toMatchObject({
       amount: "50000000",
       decimals: "6",
       mint: USDC,
+      symbol: "USDC",
     });
     const source = transfer.accounts.find((a) => a.role === "source")?.address;
     const destination = transfer.accounts.find((a) => a.role === "destination")?.address;

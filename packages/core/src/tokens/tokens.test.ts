@@ -3,6 +3,7 @@ import { type Address, address, getBase64Encoder, type Signature } from "@solana
 import { beforeAll, describe, expect, it } from "vitest";
 import { annotateInstructions } from "../annotate.js";
 import { decodeRawTransaction } from "../decoders/transaction.js";
+import { renderSummary } from "../i18n/render.js";
 import { REGISTRY_TOKENS } from "../registry/index.js";
 import type { DecodedInstruction } from "../report.js";
 import { FixtureRpcClient } from "../rpc/fixture-client.js";
@@ -233,5 +234,76 @@ describe("annotateInstructions: labels on a real Squads proposal", () => {
       label: { key: "label.vault", params: { index: "0" }, source: "multisig" },
     });
     expect(CREATOR).toBe(create?.accounts.find((a) => a.role === "creator")?.address);
+  });
+});
+
+describe("registry mints whose mint account is not read", () => {
+  const USDC = address("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+  let native: FixtureData;
+  let usdcTransfer: DecodedInstruction[];
+  beforeAll(async () => {
+    native = await loadFixtureFile(fixturePath("native-instructions"));
+    const signature = [...native.transactions.keys()].find((s) => s.startsWith("3Feg3sty"));
+    const tx = signature === undefined ? undefined : native.transactions.get(signature);
+    if (tx === undefined) {
+      throw new Error("fixture is missing the USDC transfer");
+    }
+    const decoded = await decodeRawTransaction(new FixtureRpcClient(native), tx.transactionBase64);
+    usdcTransfer = [...decoded.instructions];
+  });
+
+  it("names a real USDC transfer from the registry when the mint account was not captured", async () => {
+    expect(native.accounts.has(USDC)).toBe(false);
+    const result = await enrichTokenAmounts(new FixtureRpcClient(native), usdcTransfer, "mainnet");
+    expect(result.gaps).toEqual([]);
+    const transfer = result.instructions.find((ix) => ix.name === "transferChecked");
+    expect(transfer?.summary?.params).toMatchObject({ decimals: "6", mint: USDC, symbol: "USDC" });
+    expect(result.tokens).toEqual([
+      {
+        decimals: 6,
+        decimalsSource: "registry",
+        mint: USDC,
+        registry: { name: "USD Coin", symbol: "USDC" },
+        tokenProgram: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      },
+    ]);
+    if (transfer === undefined) {
+      throw new Error("no transfer");
+    }
+    expect(renderSummary(transfer, "en").text).toContain("50 USDC");
+    expect(renderSummary(transfer, "pt-PT").text).toContain("50 USDC");
+  });
+
+  it("uses the mint account itself when it can be read (no registry fallback)", async () => {
+    const withMint = {
+      ...native,
+      accounts: new Map([...native.accounts, ...registryMints.accounts]),
+    };
+    const result = await enrichTokenAmounts(
+      new FixtureRpcClient(withMint),
+      usdcTransfer,
+      "mainnet",
+    );
+    expect(result.tokens).toHaveLength(1);
+    expect(result.tokens[0]).not.toHaveProperty("decimalsSource");
+    expect(result.tokens[0]?.registry?.symbol).toBe("USDC");
+  });
+
+  it("keeps base units and a gap for a mint outside the registry whose account cannot be read", async () => {
+    const IDLE = address("BjcRmwm8e25RgjkyaFE56fc7bxRgGPw96JUkXRJFEroT");
+    const accounts = new Map(transfers.accounts);
+    accounts.delete(IDLE);
+    const data = { ...transfers, accounts };
+    const result = await enrichTokenAmounts(
+      new FixtureRpcClient(data),
+      await decodedProposal(data),
+      "mainnet",
+    );
+    expect(result.gaps).toHaveLength(4);
+    expect(result.gaps[0]?.message).toContain("the mint account could not be read");
+    const idle = embedded(result.instructions).find((ix) => ix.args?.amount === 13446797098256n);
+    expect(idle?.summary?.params).toMatchObject({ mint: IDLE });
+    expect(idle?.summary?.params).not.toHaveProperty("decimals");
+    expect(result.tokens.map((t) => t.mint)).not.toContain(IDLE);
   });
 });
