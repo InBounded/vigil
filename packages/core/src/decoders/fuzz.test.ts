@@ -14,8 +14,14 @@ const accountArbitrary = fc.record({
   isWritable: fc.boolean(),
 });
 
+/**
+ * Thousands of runs take ~2 s alone but can exceed Vitest's 5 s default under `pnpm check`
+ * (coverage, parallel workers); a generous timeout keeps the run count on slow machines and CI.
+ */
+const FUZZ = { timeout: 60_000 };
+
 describe("decoders on hostile input", () => {
-  it("decodeInstruction never throws, whatever the data and accounts", () => {
+  it("decodeInstruction never throws, whatever the data and accounts", FUZZ, () => {
     fc.assert(
       fc.property(
         fc.constantFrom<Address>(...programIds),
@@ -37,7 +43,7 @@ describe("decoders on hostile input", () => {
     );
   });
 
-  it("parseWireTransaction only ever throws a DecodeError", () => {
+  it("parseWireTransaction only ever throws a DecodeError", FUZZ, () => {
     fc.assert(
       fc.property(fc.uint8Array({ maxLength: 1232 }), (bytes) => {
         try {
