@@ -37,10 +37,18 @@ export interface Rendered {
 
 const PLACEHOLDER = /\{([A-Za-z0-9_.]+)(?::([A-Za-z]+))?\}/g;
 
-const FORMAT: Readonly<Record<Locale, { readonly group: string; readonly decimal: string }>> = {
-  en: { decimal: ".", group: "," },
-  // European Portuguese groups thousands with a (no-break) space and uses a decimal comma.
-  "pt-PT": { decimal: ",", group: "\u00A0" },
+interface NumberFormat {
+  readonly group: string;
+  readonly decimal: string;
+  /** Integers with fewer digits than this are not grouped (CLDR `minimumGroupingDigits` + 3). */
+  readonly minDigitsToGroup: number;
+}
+
+const FORMAT: Readonly<Record<Locale, NumberFormat>> = {
+  en: { decimal: ".", group: ",", minDigitsToGroup: 4 },
+  // European Portuguese: decimal comma, (no-break) space between thousands, and no grouping below
+  // five digits ("1000", "10 000"), as CLDR pt-PT (minimumGroupingDigits 2) and `Intl` do.
+  "pt-PT": { decimal: ",", group: "\u00A0", minDigitsToGroup: 5 },
 };
 
 export function t(
@@ -69,7 +77,9 @@ export function formatAmount(raw: string | bigint, decimals: number, locale: Loc
 }
 
 function groupDigits(whole: string, locale: Locale): string {
-  return whole.replace(/\B(?=(\d{3})+(?!\d))/g, FORMAT[locale].group);
+  const { group, minDigitsToGroup } = FORMAT[locale];
+  const digits = whole.startsWith("-") ? whole.length - 1 : whole.length;
+  return digits < minDigitsToGroup ? whole : whole.replace(/\B(?=(\d{3})+(?!\d))/g, group);
 }
 
 /** Label text for an account. `short` is the inline form used inside sentences. */
