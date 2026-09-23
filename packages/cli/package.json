@@ -1,15 +1,35 @@
 {
-  "name": "@vigil/cli",
+  "name": "@vigil-sol/cli",
   "version": "0.0.0",
-  "private": true,
+  "description": "Vigil CLI: explains what a Squads v4 multisig proposal or a Solana transaction will do, and flags risks, before you vote. Read-only.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/InBounded/vigil.git",
+    "directory": "packages/cli"
+  },
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=22.20.0"
+  },
   "bin": {
-    "vigil": "./dist/index.js"
+    "vigil": "./dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.test.*",
+    "!dist/test-support"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json"
+    "typecheck": "tsc -p tsconfig.test.json"
+  },
+  "dependencies": {
+    "@solana/kit": "8.3.0",
+    "@vigil-sol/core": "workspace:*"
   }
 }

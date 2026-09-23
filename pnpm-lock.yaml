@@ -205,7 +205,14 @@ importers:
         specifier: 6.2.5
         version: 6.2.5
 
-  packages/cli: {}
+  packages/cli:
+    dependencies:
+      '@solana/kit':
+        specifier: 8.3.0
+        version: 8.3.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@7.0.2)(utf-8-validate@6.0.6)
+      '@vigil-sol/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/core:
     dependencies:
