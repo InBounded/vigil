@@ -90,7 +90,8 @@ Stake (u32 tag): 0 Initialize, 1 Authorize, 2 DelegateStake, 3 Split, 4 Withdraw
 Compute Budget (u8 tag): 1 RequestHeapFrame, 2 SetComputeUnitLimit, 3 SetComputeUnitPrice, 4 SetLoadedAccountsDataSizeLimit.
 10. On-chain Anchor IDL
 Address: createWithSeed(base, "anchor:idl", programId), where base is the program's PDA with empty seeds.
-Layout: discriminator (8), authority (32), data length (u32 LE), zlib-compressed IDL JSON.
+Layout: discriminator (8), authority (32), data length (u32 LE), zlib-compressed IDL JSON. The discriminator is the first 8 bytes of sha256("internal:IdlAccount"), not "account:IdlAccount": IdlAccount is declared #[account("internal")], and the namespace replaces the "account" prefix (anchor lang/attribute/account/src/lib.rs, commit cc9f6b1c; confirmed on real mainnet IDL accounts, see docs/DECISIONS.md).
+Deprecated: current Anchor marks the on-chain IDL account deprecated in favour of the Program Metadata program (seed "idl"), which should be tried first.
 Legacy (pre-0.30) and new (0.30+) formats differ: convert with @codama/nodes-from-anchor.
 Legacy instruction discriminator: first 8 bytes of sha256("global:<snake_case_name>"); explicit in the new format.
 11. String sanitization
@@ -100,6 +101,7 @@ Remove or flag:
 C0/C1 control characters (U+0000–U+001F, U+007F–U+009F), except newline in memos.
 Bidi formatting: U+202A–U+202E, U+2066–U+2069, U+200E, U+200F, U+061C.
 Zero-width: U+200B–U+200D, U+2060, U+FEFF.
+Other invisible characters: Unicode tag characters U+E0000–U+E007F, line separator U+2028, paragraph separator U+2029.
 Flag (do not remove) non-ASCII characters in token symbols and mixed scripts (Latin with Cyrillic/Greek) in names.
 12. Executable hash (solana-verify compatible)
 
