@@ -29,7 +29,7 @@ describe("rule catalogue", () => {
   it("has unique ids in order, with the severity their id says", () => {
     const ids = RULES.map((r) => r.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids).toHaveLength(27);
+    expect(ids).toHaveLength(28);
     for (const rule of RULES) {
       const letter = rule.id.charAt(4);
       expect(rule.defaultSeverity, rule.id).toBe(

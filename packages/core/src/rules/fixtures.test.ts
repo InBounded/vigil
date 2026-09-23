@@ -19,6 +19,7 @@ import {
   multisig,
   NOW,
   proposalFixtureContext,
+  SIM_RUN,
 } from "../test-support/rules.js";
 import { priorityFeeLamports } from "./catalog/info.js";
 import { computeVerdict, runRules } from "./engine.js";
@@ -445,6 +446,7 @@ describe("native instructions (native-instructions.json)", () => {
         votes: { approved: [multisig().members[0]?.key ?? owner], cancelled: [], rejected: [] },
       },
       simulation: {
+        ...SIM_RUN,
         balanceChanges: [
           { account: source, asset: USDC, owner, pre: 5_000_000_000n, post: 4_950_000_000n },
           { account: destination, asset: USDC, pre: 0n, post: 50_000_000n },

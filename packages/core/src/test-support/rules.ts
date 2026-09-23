@@ -18,7 +18,12 @@ import { annotateInstructions } from "../annotate.js";
 import { createDecodeContext, decodeInstruction } from "../decoders/decode.js";
 import { decodeVaultTransactionMessage } from "../decoders/squads-proposal.js";
 import { decodeRawTransaction } from "../decoders/transaction.js";
-import type { DecodedAccount, DecodedInstruction } from "../report.js";
+import {
+  type DecodedAccount,
+  type DecodedInstruction,
+  SIMULATION_SNAPSHOT_NOTE,
+  type SimulationRun,
+} from "../report.js";
 import { FixtureRpcClient } from "../rpc/fixture-client.js";
 import { loadFixtureFile } from "../rpc/fixture-file.js";
 import type { FixtureData } from "../rpc/index.js";
@@ -115,8 +120,10 @@ export function context(overrides: ContextOverrides = {}): Promise<RuleContext> 
   });
 }
 
+/** `name` without extension means `<name>.json`; a `.json.gz` name is used as is. */
 export function fixturePath(name: string): string {
-  return fileURLToPath(new URL(`../../../../fixtures/${name}.json`, import.meta.url));
+  const file = name.endsWith(".json.gz") ? name : `${name}.json`;
+  return fileURLToPath(new URL(`../../../../fixtures/${file}`, import.meta.url));
 }
 
 export async function loadFixture(name: string): Promise<FixtureData> {
@@ -217,3 +224,15 @@ export function decodeBuilt(built: Instruction, index = 0): DecodedInstruction {
 export function signer(address: Address) {
   return createNoopSigner(address);
 }
+
+/**
+ * The `SimulationRun` fields (Phase 5 contract) that the rules do not read, for hand-built
+ * simulation results in tests: slot, fee payer, logs and the mandatory snapshot note.
+ */
+export const SIM_RUN = {
+  feePayer: { address: addr(99), source: "vault" },
+  logs: [],
+  logsTruncated: false,
+  notes: [{ key: SIMULATION_SNAPSHOT_NOTE, params: {} }],
+  slot: 1n,
+} as const satisfies Omit<SimulationRun, "batchItem">;

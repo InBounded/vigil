@@ -17,6 +17,7 @@ import {
   decodeBuilt,
   instruction,
   multisig,
+  SIM_RUN,
   signer,
 } from "../test-support/rules.js";
 import type { TokenInfo } from "../tokens/enrich.js";
@@ -337,7 +338,7 @@ describe("VGL-W005 new destination", () => {
 describe("VGL-W006 simulation failed or unavailable", () => {
   it("fires when simulation failed or could not run, with the detail sanitized", async () => {
     const failed = await context({
-      simulation: { error: "custom program error: 0x1\u202E", status: "failed" },
+      simulation: { ...SIM_RUN, error: "custom program error: 0x1\u202E", status: "failed" },
     });
     const found = only(simulationProblem.evaluate(failed));
     expect(found).toMatchObject({
@@ -348,7 +349,12 @@ describe("VGL-W006 simulation failed or unavailable", () => {
       "A simula\u00E7\u00E3o falhou: custom program error: 0x1",
     );
     const unavailable = await context({
-      simulation: { reason: "RPC timeout", status: "unavailable" },
+      simulation: {
+        code: "rpc-error",
+        notes: SIM_RUN.notes,
+        reason: "RPC timeout",
+        status: "unavailable",
+      },
     });
     expect(only(simulationProblem.evaluate(unavailable)).titleKey).toBe(
       "finding.VGL-W006.unavailable",
@@ -358,7 +364,7 @@ describe("VGL-W006 simulation failed or unavailable", () => {
   it("does not fire when simulation succeeded or was turned off (that is a gap instead)", async () => {
     expect(
       simulationProblem.evaluate(
-        await context({ simulation: { balanceChanges: [], status: "success" } }),
+        await context({ simulation: { ...SIM_RUN, balanceChanges: [], status: "success" } }),
       ),
     ).toEqual([]);
     expect(simulationProblem.evaluate(await context())).toEqual([]);
@@ -378,6 +384,7 @@ describe("VGL-W007 unexpected balance changes", () => {
         }),
       ],
       simulation: {
+        ...SIM_RUN,
         balanceChanges: [
           { account: A, asset: "SOL", post: 0n, pre: 10n },
           { account: B, asset: "SOL", post: 11n, pre: 10n },
@@ -400,6 +407,7 @@ describe("VGL-W007 unexpected balance changes", () => {
     const ctx = await context({
       feePayer: C,
       simulation: {
+        ...SIM_RUN,
         balanceChanges: [
           { account: C, asset: "SOL", post: 9n, pre: 10n },
           { account: C, asset: "SOL", post: 11n, pre: 10n },
@@ -415,6 +423,7 @@ describe("VGL-W007 unexpected balance changes", () => {
     const explained = await context({
       instructions: [solTransfer(1n)],
       simulation: {
+        ...SIM_RUN,
         balanceChanges: [
           { account: A, asset: "SOL", post: 9n, pre: 10n },
           { account: B, asset: "SOL", post: 11n, pre: 10n },
@@ -425,7 +434,7 @@ describe("VGL-W007 unexpected balance changes", () => {
     expect(unexpectedBalanceChanges.evaluate(explained)).toEqual([]);
     expect(
       unexpectedBalanceChanges.evaluate(
-        await context({ simulation: { error: "x", status: "failed" } }),
+        await context({ simulation: { ...SIM_RUN, error: "x", status: "failed" } }),
       ),
     ).toEqual([]);
   });

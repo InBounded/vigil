@@ -1,0 +1,27 @@
+{
+  "capturedAt": "2026-09-23T05:23:17.224Z",
+  "description": "Real answers of OtterSec's verification API (https://verify.osec.io/status/<program>), recorded verbatim (HTTP status and body) on 2026-09-23 through Vigil's FetchHttpClient, for the programs in programs-mainnet.json.gz: Squads v3 and J24jWEos... are verified builds whose executable_hash equals the hash of the deployed code; Sett1ere... is not verified and has no hashes; Raydium CPMM is not verified (on_chain_hash only; its repo_url has a /tree/<commit> path); Marinade MarBmsSg... is not verified and its executable_hash differs from its on_chain_hash.",
+  "endpoint": "https://verify.osec.io/status/",
+  "responses": {
+    "SMPLecH534NA9acpos4G6x7uf3LWbCAwZQE9e8ZekMu": {
+      "status": 200,
+      "text": "{\"is_verified\":true,\"message\":\"On chain program verified\",\"on_chain_hash\":\"72da599d9ee14b2a03a23ccfa6f06d53eea4a00825ad2191929cbd78fb69205c\",\"executable_hash\":\"72da599d9ee14b2a03a23ccfa6f06d53eea4a00825ad2191929cbd78fb69205c\",\"repo_url\":\"https://github.com/squads-protocol/squads-mpl/tree/c95b7673d616c377a349ca424261872dfcf8b19d\",\"commit\":\"c95b7673d616c377a349ca424261872dfcf8b19d\",\"last_verified_at\":\"2025-01-16T17:01:07.217803\",\"is_frozen\":true,\"is_closed\":false}"
+    },
+    "Sett1ereLzRw7neSzoUSwp6vvstBkEgAgQeP6wFcw5F": {
+      "status": 200,
+      "text": "{\"is_verified\":false,\"message\":\"On chain program not verified\",\"on_chain_hash\":\"\",\"executable_hash\":\"\",\"repo_url\":\"\",\"commit\":\"\",\"last_verified_at\":null,\"is_frozen\":false,\"is_closed\":false}"
+    },
+    "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C": {
+      "status": 200,
+      "text": "{\"is_verified\":false,\"message\":\"On chain program not verified\",\"on_chain_hash\":\"bdaff73e7ed9fc75f091d732987d36476d7378d32c47495fe9eef0a930dbf8cc\",\"executable_hash\":\"\",\"repo_url\":\"https://github.com/raydium-io/raydium-cp-swap/tree/cfdb70a8ca9ea62bb5c304d4492ac0fc371ae8ce\",\"commit\":\"cfdb70a8ca9ea62bb5c304d4492ac0fc371ae8ce\",\"last_verified_at\":null,\"is_frozen\":false,\"is_closed\":false}"
+    },
+    "J24jWEosQc5jgkdPm3YzNgzQ54CqNKkhzKy56XXJsLo2": {
+      "status": 200,
+      "text": "{\"is_verified\":true,\"message\":\"On chain program verified\",\"on_chain_hash\":\"a83b811dd1659a91d5861ad8e329417caca09e2dc6bd7e0916d8a4655387dcf5\",\"executable_hash\":\"a83b811dd1659a91d5861ad8e329417caca09e2dc6bd7e0916d8a4655387dcf5\",\"repo_url\":\"https://github.com/onre-finance/onre-sol/tree/c0490831f438074562ebf51e437ca5f8e027596b\",\"commit\":\"c0490831f438074562ebf51e437ca5f8e027596b\",\"last_verified_at\":\"2026-09-21T13:10:55.256517\",\"is_frozen\":false,\"is_closed\":false}"
+    },
+    "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD": {
+      "status": 200,
+      "text": "{\"is_verified\":false,\"message\":\"On chain program not verified\",\"on_chain_hash\":\"db89efca1670f85397f978e9a02f6c2806a9adaa17ebb5783e7e99eddcb26be3\",\"executable_hash\":\"daeb88a604e11a83382fd2e318abb99e455fd02a2b612227e61e0bb7b5568ab7\",\"repo_url\":\"https://github.com/marinade-finance/liquid-staking-program\",\"commit\":\"\",\"last_verified_at\":\"2024-01-26T07:53:47.286115\",\"is_frozen\":false,\"is_closed\":false}"
+    }
+  }
+}
