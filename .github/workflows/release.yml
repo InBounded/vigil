@@ -1,0 +1,62 @@
+name: Release
+
+# Publishes @vigil-sol/core and @vigil-sol/cli to npm, with provenance, when a v* tag is pushed.
+# Nothing else triggers it. Written in Phase 6, first used in Phase 10 (see docs/DECISIONS.md).
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Check and publish to npm
+    runs-on: ubuntu-latest
+    # A protected environment lets the maintainer require an approval before anything is published.
+    environment: npm
+    permissions:
+      contents: read
+      # Required by npm provenance: the build is attested with this workflow's OIDC identity.
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+          # No dependency cache in the release job: every byte comes from the lockfile.
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Tag matches the package versions
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          for pkg in packages/core packages/cli; do
+            version=$(node -p "require('./$pkg/package.json').version")
+            if [ "v$version" != "$TAG" ]; then
+              echo "::error::$pkg is version $version but the tag is $TAG"
+              exit 1
+            fi
+          done
+
+      - name: Run checks
+        run: pnpm check
+
+      - name: Publish (core, then cli)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # Recursive publish skips private packages (web, rpc-proxy) and follows dependency order;
+        # workspace:* dependencies are replaced by the exact version.
+        run: pnpm -r publish --access public --provenance --no-git-checks --report-summary
