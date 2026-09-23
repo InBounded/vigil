@@ -1,4 +1,5 @@
 import type { Address } from "@solana/kit";
+import type { RpcMismatch } from "../crosscheck/index.js";
 import type { V1TransactionConfig } from "../decoders/transaction.js";
 import type {
   AnalysisGap,
@@ -8,7 +9,7 @@ import type {
   Finding,
   ProgramInfo,
   Severity,
-  SimulationResult,
+  SimulationOutcome,
 } from "../report.js";
 import type { Cluster } from "../rpc/types.js";
 import type {
@@ -89,6 +90,8 @@ export interface RuleFacts {
   readonly balances?: readonly AssetBalance[];
   /** Destinations seen in the vault's last `historyDepth` transactions (only when > 0). */
   readonly recentDestinations?: ReadonlySet<Address>;
+  /** Critical accounts on which the primary and the second RPC disagree (`crossCheckAccounts`). */
+  readonly rpcMismatches?: readonly RpcMismatch[];
 }
 
 /** Everything a rule may look at. Built by `createRuleContext`; rules never do I/O. */
@@ -101,7 +104,8 @@ export interface RuleContext {
   readonly gaps: readonly AnalysisGap[];
   readonly tokens: readonly TokenInfo[];
   readonly programs: readonly ProgramInfo[];
-  readonly simulation?: SimulationResult;
+  /** One result, or one per item for a batch proposal. */
+  readonly simulation?: SimulationOutcome;
   readonly configActions?: readonly ConfigAction[];
   readonly transactionKind?: SquadsTransactionKind;
   readonly multisig?: SquadsMultisigSummary;

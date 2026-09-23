@@ -7,6 +7,7 @@ export {
   renderFinding,
   renderGap,
   renderLabel,
+  renderSimulationNotes,
   renderSummary,
   shortAddress,
   t,

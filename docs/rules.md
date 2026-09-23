@@ -96,6 +96,14 @@ Findings about an instruction inside a Squads proposal that the analysed transac
 
 **False positives.** None expected: for the upgrade to succeed the buffer authority must equal the program's upgrade authority, so a buffer controlled by someone else is either a mistake or an opportunity to swap its contents before execution.
 
+### VGL-C012 — RPCs disagree
+
+**What it checks.** A critical account (the multisig, the proposal's transaction or proposal account, a batch item, a lookup table, a program's ProgramData, an upgrade buffer) has different content on your two RPC endpoints.
+
+**Why it matters.** Everything Vigil shows comes from what the RPC says. If two independent endpoints disagree on the accounts that decide what the proposal does, you cannot know which one describes what will really execute.
+
+**False positives.** One of the two RPC endpoints may simply be behind (it has not seen the latest vote or change yet). Vigil re-reads both at the same slot once before reporting, so a lasting disagreement means at least one endpoint is out of date, misconfigured or lying. Only runs when you configure a second RPC.
+
 ## Warning
 
 ### VGL-W001 — Opaque instruction

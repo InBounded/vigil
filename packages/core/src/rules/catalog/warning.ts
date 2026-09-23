@@ -1,6 +1,6 @@
 import { type Address, isAddress } from "@solana/kit";
 import { findRegistryProgram, REGISTRY_TOKENS } from "../../registry/index.js";
-import type { AssetId, Finding } from "../../report.js";
+import type { AssetId, Finding, SimulationResult } from "../../report.js";
 import { type SanitizeFlag, sanitizeOnchainString } from "../../sanitize/sanitize.js";
 import {
   accountByRole,
@@ -310,6 +310,15 @@ export const newDestination: Rule = {
   variants: [""],
 };
 
+/** The simulation results to check: the single one, or every batch item's. */
+function simulationResults(context: RuleContext): readonly SimulationResult[] {
+  const simulation = context.simulation;
+  if (simulation === undefined) {
+    return [];
+  }
+  return simulation.status === "batch" ? simulation.items : [simulation];
+}
+
 export const simulationProblem: Rule = {
   defaultSeverity: "warning",
   docs: {
@@ -319,21 +328,30 @@ export const simulationProblem: Rule = {
     why: "Simulation is the only independent view of the balances a transaction will actually change. Without it the balance checks (VGL-W007) cannot run.",
   },
   evaluate(context) {
-    const simulation = context.simulation;
-    if (simulation === undefined || simulation.status === "success") {
-      return [];
+    const findings: Finding[] = [];
+    for (const simulation of simulationResults(context)) {
+      if (simulation.status === "success") {
+        continue;
+      }
+      const detail = sanitizeOnchainString(
+        simulation.status === "failed" ? simulation.error : simulation.reason,
+      ).text;
+      const item =
+        simulation.batchItem === undefined ? {} : { batchItem: String(simulation.batchItem) };
+      findings.push(
+        finding(this, {
+          evidence: [
+            ev("status", simulation.status),
+            ev("detail", detail),
+            ...(simulation.batchItem === undefined ? [] : [ev("batchItem", simulation.batchItem)]),
+          ],
+          params: { detail, ...item },
+          provenance: "simulation",
+          variant: simulation.status,
+        }),
+      );
     }
-    const detail = sanitizeOnchainString(
-      simulation.status === "failed" ? simulation.error : simulation.reason,
-    ).text;
-    return [
-      finding(this, {
-        evidence: [ev("status", simulation.status), ev("detail", detail)],
-        params: { detail },
-        provenance: "simulation",
-        variant: simulation.status,
-      }),
-    ];
+    return findings;
   },
   id: "VGL-W006",
   name: "Simulation failed or unavailable",
@@ -350,8 +368,10 @@ export const unexpectedBalanceChanges: Rule = {
     why: "A balance change nothing in the decoded transaction explains means something is happening that the summary does not show.",
   },
   evaluate(context) {
-    const simulation = context.simulation;
-    if (simulation?.status !== "success") {
+    const results = simulationResults(context).filter(
+      (simulation) => simulation.status === "success",
+    );
+    if (results.length === 0) {
       return [];
     }
     const explained = new Set<Address>();
@@ -365,31 +385,43 @@ export const unexpectedBalanceChanges: Rule = {
         }
       }
     }
-    const unexplained = simulation.balanceChanges.filter(
-      (change) =>
-        change.pre !== change.post &&
-        !explained.has(change.account) &&
-        !(
-          change.account === context.feePayer &&
-          change.asset === "SOL" &&
-          change.post < change.pre
-        ),
-    );
-    if (unexplained.length === 0) {
-      return [];
-    }
-    return [
-      finding(this, {
-        evidence: unexplained.map((change) =>
-          ev(
-            "change",
-            `${change.account} ${change.asset} ${change.pre} -> ${change.post} (${change.post - change.pre})`,
+    const findings: Finding[] = [];
+    for (const simulation of results) {
+      const unexplained = simulation.balanceChanges.filter(
+        (change) =>
+          change.pre !== change.post &&
+          !explained.has(change.account) &&
+          !(
+            change.account === context.feePayer &&
+            change.asset === "SOL" &&
+            change.post < change.pre
           ),
-        ),
-        params: { count: String(unexplained.length) },
-        provenance: "simulation",
-      }),
-    ];
+      );
+      if (unexplained.length === 0) {
+        continue;
+      }
+      findings.push(
+        finding(this, {
+          evidence: [
+            ...unexplained.map((change) =>
+              ev(
+                "change",
+                `${change.account} ${change.asset} ${change.pre} -> ${change.post} (${change.post - change.pre})`,
+              ),
+            ),
+            ...(simulation.batchItem === undefined ? [] : [ev("batchItem", simulation.batchItem)]),
+          ],
+          params: {
+            count: String(unexplained.length),
+            ...(simulation.batchItem === undefined
+              ? {}
+              : { batchItem: String(simulation.batchItem) }),
+          },
+          provenance: "simulation",
+        }),
+      );
+    }
+    return findings;
   },
   id: "VGL-W007",
   name: "Unexpected balance changes",

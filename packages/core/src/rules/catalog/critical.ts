@@ -601,3 +601,31 @@ export const bufferExternalAuthority: Rule = {
   titleKey: "finding.VGL-C011",
   variants: [""],
 };
+
+export const rpcDisagreement: Rule = {
+  defaultSeverity: "critical",
+  docs: {
+    falsePositives:
+      "One of the two RPC endpoints may simply be behind (it has not seen the latest vote or change yet). Vigil re-reads both at the same slot once before reporting, so a lasting disagreement means at least one endpoint is out of date, misconfigured or lying. Only runs when you configure a second RPC.",
+    what: "A critical account (the multisig, the proposal's transaction or proposal account, a batch item, a lookup table, a program's ProgramData, an upgrade buffer) has different content on your two RPC endpoints.",
+    why: "Everything Vigil shows comes from what the RPC says. If two independent endpoints disagree on the accounts that decide what the proposal does, you cannot know which one describes what will really execute.",
+  },
+  evaluate(context) {
+    return (context.facts.rpcMismatches ?? []).map((mismatch) =>
+      finding(this, {
+        evidence: [
+          ev("account", mismatch.address),
+          ev("accountKind", mismatch.kind),
+          ev("primarySha256", mismatch.primarySha256 ?? "missing"),
+          ev("secondarySha256", mismatch.secondarySha256 ?? "missing"),
+        ],
+        params: { account: mismatch.address, kind: mismatch.kind },
+        provenance: "rule-inference",
+      }),
+    );
+  },
+  id: "VGL-C012",
+  name: "RPCs disagree",
+  titleKey: "finding.VGL-C012",
+  variants: [""],
+};

@@ -1,6 +1,13 @@
 import type { Address } from "@solana/kit";
 import type { AccountLabel } from "../labels/labels.js";
-import type { AnalysisGap, DecodedInstruction, Finding } from "../report.js";
+import {
+  type AnalysisGap,
+  type DecodedInstruction,
+  type Finding,
+  SIMULATION_SNAPSHOT_NOTE,
+  type SimulationNote,
+  type SimulationOutcome,
+} from "../report.js";
 import en from "./en.json" with { type: "json" };
 import ptPT from "./pt-PT.json" with { type: "json" };
 
@@ -162,6 +169,60 @@ export function renderFinding(
   return finding.params.proposed === "true"
     ? { missing: rendered.missing, text: `${rendered.text} ${t("finding.proposed", locale)}` }
     : rendered;
+}
+
+/**
+ * The notes of a simulation result, as sentences. The snapshot note ("Network state can change
+ * before execution…") always comes first — even if the result object somehow lacks it — so no
+ * interface can show simulated balances without it (maintainer requirement). Notes repeated across
+ * batch items are rendered once.
+ */
+export function renderSimulationNotes(
+  outcome: SimulationOutcome,
+  locale: Locale,
+  instructions: readonly DecodedInstruction[] = [],
+): Rendered[] {
+  const labels = new Map<Address, AccountLabel>();
+  const visit = (list: readonly DecodedInstruction[]): void => {
+    for (const instruction of list) {
+      collectLabels(instruction, labels);
+      visit(instruction.inner ?? []);
+    }
+  };
+  visit(instructions);
+  const results = outcome.status === "batch" ? outcome.items : [outcome];
+  for (const result of results) {
+    if (result.status === "success") {
+      for (const change of result.balanceChanges) {
+        if (change.label !== undefined) {
+          labels.set(change.account, change.label);
+        }
+        if (change.holderLabel !== undefined) {
+          labels.set(change.owner ?? change.account, change.holderLabel);
+        }
+      }
+    }
+  }
+  const notes: SimulationNote[] = [
+    { key: SIMULATION_SNAPSHOT_NOTE, params: {} },
+    ...outcome.notes,
+    ...(outcome.status === "batch" ? outcome.items.flatMap((item) => item.notes) : []),
+  ];
+  const seen = new Set<string>();
+  const out: Rendered[] = [];
+  for (const note of notes) {
+    const id = `${note.key}${JSON.stringify(Object.entries(note.params).sort())}`;
+    if (seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    out.push(
+      CATALOGS[locale][note.key] === undefined
+        ? { missing: [note.key], text: note.key }
+        : renderTemplate(note.key, note.params, labels, locale, () => false),
+    );
+  }
+  return out;
 }
 
 /** `true` when a param's value means "no value" (see the module comment). */
