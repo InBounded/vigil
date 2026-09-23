@@ -48,6 +48,11 @@ export interface ProgramDecoder {
   readonly programIds: readonly Address[];
   readonly label: string;
   /**
+   * Every instruction name `decode` can return, so tests can check each one has a plain-language
+   * summary in every language. Empty for IDL-driven decoders (their names come from the IDL).
+   */
+  readonly instructionNames: readonly string[];
+  /**
    * Pure and synchronous. Throws (a `DecodeError`, or a `SolanaError` from an official client's
    * codec) when the instruction is unknown or malformed; the caller turns that into a gap.
    */

@@ -5,6 +5,7 @@ import {
   SquadsMultisigProgramInstruction,
 } from "../squads/generated/programs/squadsMultisigProgram.js";
 import {
+  enumInstructionNames,
   enumName,
   instructionName,
   normalizeArgs,
@@ -71,6 +72,7 @@ export const squadsDecoder: ProgramDecoder = {
         return { accountRoles, args: normalizeArgs(parsed.data), name };
     }
   },
+  instructionNames: enumInstructionNames(SquadsMultisigProgramInstruction),
   key: "squads",
   kind: "squads",
   label: "Squads Multisig v4",

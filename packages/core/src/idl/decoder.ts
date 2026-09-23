@@ -49,6 +49,7 @@ export function idlProgramDecoder(
         },
       };
     },
+    instructionNames: [],
     key: "idl",
     kind: source === "program-metadata" ? "program-metadata-idl" : "anchor-idl",
     // Used in gap messages only. The IDL's own program name is author-declared, so it is never

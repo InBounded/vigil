@@ -114,6 +114,49 @@ const EXTENSION_SUB_INSTRUCTIONS: Readonly<Record<number, readonly string[]>> = 
   ],
 };
 
+/** Instructions without sub-tags that are identified by name only (arguments not decoded). */
+const IDENTIFIED_ONLY: Readonly<Record<number, string>> = {
+  21: "getAccountDataSize",
+  23: "amountToUiAmount",
+  24: "uiAmountToAmount",
+  29: "reallocate",
+  31: "createNativeMint",
+  32: "initializeNonTransferableMint",
+  45: "unwrapLamports",
+};
+
+/** Names `decodeToken2022` returns directly (fully decoded instructions). */
+const DECODED_NAMES = [
+  "initializeMint",
+  "initializeMint2",
+  "initializeAccount",
+  "initializeMultisig",
+  "initializeMultisig2",
+  "transfer",
+  "approve",
+  "revoke",
+  "setAuthority",
+  "mintTo",
+  "burn",
+  "closeAccount",
+  "freezeAccount",
+  "thawAccount",
+  "transferChecked",
+  "approveChecked",
+  "mintToChecked",
+  "burnChecked",
+  "initializeAccount2",
+  "syncNative",
+  "initializeAccount3",
+  "initializeImmutableOwner",
+  "initializeMintCloseAuthority",
+  "initializePermanentDelegate",
+  "withdrawExcessLamports",
+  "batch",
+  "updateTokenMetadataUpdateAuthority",
+  "updateTokenGroupUpdateAuthority",
+] as const;
+
 /** Pointer-style extensions: `Initialize { authority, <field> }` / `Update { <field> }`, both `MaybeNull<Address>`. */
 const POINTER_EXTENSIONS: Readonly<
   Record<number, { readonly field: string; readonly authorityRole: string }>
@@ -133,6 +176,13 @@ export const token2022Decoder: ProgramDecoder = {
       accountRoles: instruction.accounts.map((_account, i) => roles[i]),
     };
   },
+  instructionNames: [
+    ...new Set([
+      ...DECODED_NAMES,
+      ...Object.values(IDENTIFIED_ONLY),
+      ...Object.values(EXTENSION_SUB_INSTRUCTIONS).flat(),
+    ]),
+  ],
   key: "token2022",
   kind: "native",
   label: "Token-2022",
@@ -347,16 +397,7 @@ function decodePausable(reader: ByteReader): Decoded {
 
 /** Instructions recognised by tag (and sub-tag) but whose arguments are not decoded. */
 function identifyOnly(tag: number, reader: ByteReader): Decoded {
-  const plain: Readonly<Record<number, string>> = {
-    21: "getAccountDataSize",
-    23: "amountToUiAmount",
-    24: "uiAmountToAmount",
-    29: "reallocate",
-    31: "createNativeMint",
-    32: "initializeNonTransferableMint",
-    45: "unwrapLamports",
-  };
-  const plainName = plain[tag];
+  const plainName = IDENTIFIED_ONLY[tag];
   if (plainName !== undefined) {
     return { argsNotDecoded: true, name: plainName, roles: [] };
   }

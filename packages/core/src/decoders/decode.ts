@@ -451,8 +451,9 @@ function undecoded(
 
 /**
  * Generic i18n summary: key `ix.<program>.<instruction>`, params = every scalar argument plus
- * every named account role. The UI template picks which params to show. `null` becomes `"none"`
- * (e.g. an authority being removed) so absence is always explicit.
+ * every named account role. Nested objects are flattened with dotted keys (`newMember.key`), and
+ * arrays contribute their length as `<name>.count`. The UI template picks which params to show.
+ * `null` becomes `"none"` (e.g. an authority being removed) so absence is always explicit.
  */
 function buildSummary(
   programKey: string,
@@ -466,20 +467,32 @@ function buildSummary(
       params[account.role] = account.address;
     }
   }
-  for (const [key, value] of Object.entries(args)) {
+  addScalarParams(params, "", args);
+  return { key: `ix.${programKey}.${name}`, params };
+}
+
+function addScalarParams(
+  params: Record<string, string>,
+  prefix: string,
+  values: Readonly<Record<string, unknown>>,
+): void {
+  for (const [key, value] of Object.entries(values)) {
+    const name = `${prefix}${key}`;
     if (value === null) {
-      params[key] = "none";
+      params[name] = "none";
     } else if (
       typeof value === "bigint" ||
       typeof value === "number" ||
-      typeof value === "boolean"
+      typeof value === "boolean" ||
+      typeof value === "string"
     ) {
-      params[key] = value.toString();
-    } else if (typeof value === "string") {
-      params[key] = value;
+      params[name] = value.toString();
+    } else if (Array.isArray(value)) {
+      params[`${name}.count`] = String(value.length);
+    } else if (typeof value === "object" && !(value instanceof Uint8Array)) {
+      addScalarParams(params, `${name}.`, value as Readonly<Record<string, unknown>>);
     }
   }
-  return { key: `ix.${programKey}.${name}`, params };
 }
 
 function addGap(

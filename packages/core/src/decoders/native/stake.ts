@@ -6,6 +6,7 @@ import {
   StakeInstruction,
 } from "@solana-program/stake";
 import {
+  enumInstructionNames,
   enumName,
   instructionName,
   normalizeArgs,
@@ -124,6 +125,7 @@ export const stakeDecoder: ProgramDecoder = {
       name: instructionName(String(enumName(StakeInstruction, parsed.instructionType))),
     };
   },
+  instructionNames: enumInstructionNames(StakeInstruction),
   key: "stake",
   kind: "native",
   label: "Stake Program",

@@ -24,6 +24,7 @@ export const memoDecoder: ProgramDecoder = {
       name: "addMemo",
     };
   },
+  instructionNames: ["addMemo"],
   key: "memo",
   kind: "native",
   label: "Memo Program",

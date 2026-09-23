@@ -1,5 +1,6 @@
 import type { Address, ReadonlyUint8Array } from "@solana/kit";
 import {
+  enumInstructionNames,
   enumName,
   instructionName,
   type KitInstruction,
@@ -49,6 +50,7 @@ export function codamaProgramDecoder(options: CodamaProgramOptions): ProgramDeco
         name,
       };
     },
+    instructionNames: enumInstructionNames(options.instructionEnum),
     key: options.key,
     kind: "native",
     label: options.label,

@@ -93,6 +93,13 @@ export function enumName(enumObject: Readonly<Record<number, string>>, value: un
   return value;
 }
 
+/** Every member name of a numeric TypeScript enum, as lower-camel instruction names. */
+export function enumInstructionNames(enumObject: Readonly<Record<number, string>>): string[] {
+  return Object.values(enumObject)
+    .filter((value): value is string => typeof value === "string")
+    .map(instructionName);
+}
+
 /** Lower-camel instruction name from an enum member name (`TransferSol` → `transferSol`). */
 export function instructionName(enumMemberName: string): string {
   return enumMemberName.charAt(0).toLowerCase() + enumMemberName.slice(1);

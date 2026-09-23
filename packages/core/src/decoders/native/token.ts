@@ -32,6 +32,8 @@ export const tokenDecoder: ProgramDecoder = {
     }
     return baseTokenDecoder.decode(instruction);
   },
+  // `Batch` is in `TokenInstruction` already; the Set keeps the list correct either way.
+  instructionNames: [...new Set([...baseTokenDecoder.instructionNames, "batch"])],
 };
 
 export const associatedTokenDecoder = codamaProgramDecoder({
