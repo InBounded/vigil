@@ -1,0 +1,15 @@
+{
+  "capturedAt": "2026-09-23T10:42:03.644Z",
+  "description": "Verification API answers recorded with upgrade-proposal.json",
+  "endpoint": "https://verify.osec.io/status/",
+  "responses": {
+    "Sett1ereLzRw7neSzoUSwp6vvstBkEgAgQeP6wFcw5F": {
+      "status": 200,
+      "text": "{\"is_verified\":false,\"message\":\"On chain program not verified\",\"on_chain_hash\":\"\",\"executable_hash\":\"\",\"repo_url\":\"\",\"commit\":\"\",\"last_verified_at\":null,\"is_frozen\":false,\"is_closed\":false}"
+    },
+    "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf": {
+      "status": 200,
+      "text": "{\"is_verified\":false,\"message\":\"On chain program not verified\",\"on_chain_hash\":\"d48660833989ecea3145ff726164fe640bd90696f03ce00dfd0cda258cbf2fac\",\"executable_hash\":\"\",\"repo_url\":\"https://github.com/Squads-Protocol/v4/tree/3742e5521a3e833f24a4c6bc024dd1aa5385d010\",\"commit\":\"3742e5521a3e833f24a4c6bc024dd1aa5385d010\",\"last_verified_at\":null,\"is_frozen\":true,\"is_closed\":false}"
+    }
+  }
+}

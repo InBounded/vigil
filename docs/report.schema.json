@@ -1,0 +1,1203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/InBounded/vigil/blob/main/docs/report.schema.json",
+  "title": "Vigil AnalysisReport",
+  "description": "The JSON written by `vigil decode --json` and by `serializeReport` in @vigil/core (packages/core/src/report.ts). bigint values are decimal strings; object keys are sorted; absent optional fields are left out.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "cluster",
+    "completeness",
+    "contextSlot",
+    "findings",
+    "generatedAt",
+    "input",
+    "instructions",
+    "programs",
+    "rpcHost",
+    "schemaVersion",
+    "tokens",
+    "verdict"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    },
+    "cluster": {
+      "enum": ["mainnet", "devnet", "testnet", "unknown"]
+    },
+    "rpcHost": {
+      "type": "string",
+      "pattern": "^[^/?#@\\s]+$",
+      "description": "Host only: never a path, query or credentials."
+    },
+    "contextSlot": {
+      "$ref": "#/$defs/u64"
+    },
+    "input": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "multisig", "transactionIndex"],
+          "properties": {
+            "kind": {
+              "const": "squads-proposal"
+            },
+            "multisig": {
+              "$ref": "#/$defs/address"
+            },
+            "transactionIndex": {
+              "$ref": "#/$defs/u64"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "sha256"],
+          "properties": {
+            "kind": {
+              "const": "raw-transaction"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        }
+      ]
+    },
+    "multisig": {
+      "$ref": "#/$defs/multisig"
+    },
+    "proposal": {
+      "$ref": "#/$defs/proposal"
+    },
+    "transactionKind": {
+      "enum": ["vault", "config", "batch"]
+    },
+    "rawTransaction": {
+      "$ref": "#/$defs/rawTransaction"
+    },
+    "instructions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/instruction"
+      }
+    },
+    "configActions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/configAction"
+      }
+    },
+    "tokens": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/token"
+      }
+    },
+    "programs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/program"
+      }
+    },
+    "simulation": {
+      "$ref": "#/$defs/simulation"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "verdict": {
+      "enum": ["critical", "incomplete", "attention", "no-findings"]
+    },
+    "completeness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["complete", "gaps"],
+      "properties": {
+        "complete": {
+          "type": "boolean"
+        },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/gap"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "u64": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "description": "Unsigned integer (u64, bigint) as a decimal string."
+    },
+    "address": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$",
+      "description": "Base58 address."
+    },
+    "stringMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "provenance": {
+      "enum": ["onchain", "idl-declared", "external-api", "simulation", "rule-inference"]
+    },
+    "label": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "params", "source"],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/$defs/stringMap"
+        },
+        "source": {
+          "enum": ["multisig", "registry", "sysvar", "user"]
+        }
+      },
+      "description": "An account label: i18n key and params."
+    },
+    "sanitizerNote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flags", "modified", "path"],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "modified": {
+          "type": "boolean"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sanitizeFlag"
+          }
+        }
+      }
+    },
+    "sanitizeFlag": {
+      "enum": [
+        "control-chars-removed",
+        "bidi-removed",
+        "zero-width-removed",
+        "invisible-removed",
+        "truncated",
+        "non-ascii",
+        "mixed-scripts"
+      ]
+    },
+    "sanitizedString": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flags", "modified", "text"],
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "modified": {
+          "type": "boolean"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sanitizeFlag"
+          }
+        }
+      }
+    },
+    "account": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["address", "isSigner", "isWritable"],
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/address"
+        },
+        "role": {
+          "type": "string"
+        },
+        "isSigner": {
+          "type": "boolean"
+        },
+        "isWritable": {
+          "type": "boolean"
+        },
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "fromLookupTable": {
+          "$ref": "#/$defs/address"
+        }
+      }
+    },
+    "instruction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accounts", "decoder", "index", "programId", "provenance", "rawDataHex"],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "batchItem": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "programId": {
+          "$ref": "#/$defs/address"
+        },
+        "programLabel": {
+          "type": "string"
+        },
+        "decoder": {
+          "enum": ["native", "squads", "program-metadata-idl", "anchor-idl", "none"]
+        },
+        "name": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["key", "params"],
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "params": {
+              "$ref": "#/$defs/stringMap"
+            },
+            "nullParams": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "args": {
+          "type": "object",
+          "description": "Decoded arguments as the decoder names them (bigints as decimal strings). Free-form: shape depends on the instruction."
+        },
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/account"
+          }
+        },
+        "rawDataHex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "inner": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/instruction"
+          }
+        },
+        "sanitizer": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sanitizerNote"
+          }
+        }
+      }
+    },
+    "gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "enum": [
+            "UNKNOWN_PROGRAM",
+            "UNKNOWN_INSTRUCTION",
+            "MALFORMED_INSTRUCTION",
+            "INSTRUCTION_ARGS_NOT_DECODED",
+            "ACCOUNT_INDEX_OUT_OF_RANGE",
+            "ACCOUNT_UNRESOLVED",
+            "LOOKUP_TABLE_NOT_FOUND",
+            "LOOKUP_TABLE_INVALID",
+            "LOOKUP_TABLE_INDEX_OUT_OF_RANGE",
+            "EMBEDDED_MESSAGE_INVALID",
+            "EMBEDDED_MESSAGE_IN_BUFFER",
+            "RPC_TRANSACTION_VERSION_UNSUPPORTED",
+            "TOKEN_DECIMALS_UNKNOWN",
+            "IDL_FETCH_FAILED",
+            "IDL_INVALID",
+            "IDL_AT_URL",
+            "IDL_UNSUPPORTED",
+            "SIMULATION_DISABLED",
+            "PROGRAM_VERIFICATION_UNKNOWN",
+            "TRANSFER_BALANCE_UNKNOWN",
+            "SIMULATION_UNAVAILABLE",
+            "SIMULATION_PRESTATE_MISMATCH",
+            "SIMULATION_BALANCES_INCOMPLETE",
+            "PROGRAM_INFO_UNKNOWN",
+            "PROGRAM_VERIFICATION_DISABLED",
+            "RPC_MISMATCH",
+            "RPC_CROSS_CHECK_FAILED",
+            "HISTORY_UNAVAILABLE"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "instructionIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "address": {
+          "$ref": "#/$defs/address"
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence", "params", "provenance", "ruleId", "severity", "titleKey"],
+      "properties": {
+        "ruleId": {
+          "type": "string",
+          "pattern": "^VGL-[CWI][0-9]{3}$"
+        },
+        "severity": {
+          "enum": ["critical", "warning", "info"]
+        },
+        "titleKey": {
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/$defs/stringMap"
+        },
+        "instructionIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "multisig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "address",
+        "configAuthority",
+        "createKey",
+        "isControlled",
+        "members",
+        "rentCollector",
+        "staleTransactionIndex",
+        "threshold",
+        "timeLockSeconds",
+        "transactionIndex"
+      ],
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/address"
+        },
+        "createKey": {
+          "$ref": "#/$defs/address"
+        },
+        "configAuthority": {
+          "$ref": "#/$defs/address"
+        },
+        "isControlled": {
+          "type": "boolean"
+        },
+        "threshold": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timeLockSeconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "transactionIndex": {
+          "$ref": "#/$defs/u64"
+        },
+        "staleTransactionIndex": {
+          "$ref": "#/$defs/u64"
+        },
+        "rentCollector": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/address"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "permissions"],
+            "properties": {
+              "key": {
+                "$ref": "#/$defs/address"
+              },
+              "permissions": {
+                "type": "array",
+                "items": {
+                  "enum": ["Initiate", "Vote", "Execute"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "proposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "isStale",
+        "proposalAddress",
+        "status",
+        "transactionAddress",
+        "transactionIndex",
+        "votes"
+      ],
+      "properties": {
+        "transactionIndex": {
+          "$ref": "#/$defs/u64"
+        },
+        "transactionAddress": {
+          "$ref": "#/$defs/address"
+        },
+        "proposalAddress": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/address"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "timestamp"],
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "Draft",
+                    "Active",
+                    "Rejected",
+                    "Approved",
+                    "Executing",
+                    "Executed",
+                    "Cancelled"
+                  ]
+                },
+                "timestamp": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/u64"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "votes": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["approved", "cancelled", "rejected"],
+              "properties": {
+                "approved": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/address"
+                  }
+                },
+                "rejected": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/address"
+                  }
+                },
+                "cancelled": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/address"
+                  }
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "isStale": {
+          "type": "boolean"
+        },
+        "vaultIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "batchItems": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    },
+    "rawTransaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["feePayer", "signatureCount", "version"],
+      "properties": {
+        "version": {
+          "enum": ["legacy", 0, 1]
+        },
+        "feePayer": {
+          "$ref": "#/$defs/address"
+        },
+        "signatureCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "transactionConfig": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [],
+          "properties": {
+            "priorityFeeLamports": {
+              "$ref": "#/$defs/u64"
+            },
+            "computeUnitLimit": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "loadedAccountsDataSizeLimit": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "heapSize": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "configAction": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "member", "permissions"],
+          "properties": {
+            "kind": {
+              "const": "addMember"
+            },
+            "member": {
+              "$ref": "#/$defs/address"
+            },
+            "permissions": {
+              "type": "array",
+              "items": {
+                "enum": ["Initiate", "Vote", "Execute"]
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "member"],
+          "properties": {
+            "kind": {
+              "const": "removeMember"
+            },
+            "member": {
+              "$ref": "#/$defs/address"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "newThreshold"],
+          "properties": {
+            "kind": {
+              "const": "changeThreshold"
+            },
+            "newThreshold": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "newTimeLockSeconds"],
+          "properties": {
+            "kind": {
+              "const": "setTimeLock"
+            },
+            "newTimeLockSeconds": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "amount",
+            "createKey",
+            "destinations",
+            "kind",
+            "members",
+            "mint",
+            "period",
+            "vaultIndex"
+          ],
+          "properties": {
+            "kind": {
+              "const": "addSpendingLimit"
+            },
+            "createKey": {
+              "$ref": "#/$defs/address"
+            },
+            "vaultIndex": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "mint": {
+              "$ref": "#/$defs/address"
+            },
+            "amount": {
+              "$ref": "#/$defs/u64"
+            },
+            "period": {
+              "enum": ["OneTime", "Day", "Week", "Month"]
+            },
+            "members": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/address"
+              }
+            },
+            "destinations": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/address"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "spendingLimit"],
+          "properties": {
+            "kind": {
+              "const": "removeSpendingLimit"
+            },
+            "spendingLimit": {
+              "$ref": "#/$defs/address"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "newRentCollector"],
+          "properties": {
+            "kind": {
+              "const": "setRentCollector"
+            },
+            "newRentCollector": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/address"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "newConfigAuthority"],
+          "properties": {
+            "kind": {
+              "const": "setConfigAuthority"
+            },
+            "newConfigAuthority": {
+              "$ref": "#/$defs/address"
+            }
+          }
+        }
+      ]
+    },
+    "token": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decimals", "mint", "tokenProgram"],
+      "properties": {
+        "mint": {
+          "$ref": "#/$defs/address"
+        },
+        "tokenProgram": {
+          "$ref": "#/$defs/address"
+        },
+        "decimals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "decimalsSource": {
+          "const": "registry"
+        },
+        "registry": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "symbol"],
+          "properties": {
+            "symbol": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        "declared": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "source", "symbol"],
+          "properties": {
+            "name": {
+              "$ref": "#/$defs/sanitizedString"
+            },
+            "symbol": {
+              "$ref": "#/$defs/sanitizedString"
+            },
+            "source": {
+              "enum": ["token-2022-metadata", "metaplex"]
+            }
+          }
+        }
+      }
+    },
+    "program": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["address", "upgrade", "verification"],
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/address"
+        },
+        "upgrade": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind"],
+              "properties": {
+                "kind": {
+                  "const": "immutable"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["authority", "kind"],
+              "properties": {
+                "kind": {
+                  "const": "upgradeable"
+                },
+                "authority": {
+                  "$ref": "#/$defs/address"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind"],
+              "properties": {
+                "kind": {
+                  "const": "unknown"
+                }
+              }
+            }
+          ]
+        },
+        "programData": {
+          "$ref": "#/$defs/address"
+        },
+        "executableHash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "verification": {
+          "enum": ["verified", "unverified", "unknown", "not-checked"]
+        },
+        "loader": {
+          "enum": [
+            "upgradeable",
+            "loader-v1",
+            "loader-v2",
+            "loader-v4",
+            "native",
+            "not-a-program",
+            "unknown"
+          ]
+        },
+        "lastDeploySlot": {
+          "$ref": "#/$defs/u64"
+        },
+        "authorityVaultIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "verificationDetails": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source"],
+          "properties": {
+            "source": {
+              "const": "osec"
+            },
+            "repoUrl": {
+              "type": "string",
+              "pattern": "^https://github\\.com/"
+            },
+            "commit": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "lastVerifiedAt": {
+              "type": "string"
+            },
+            "verifiedHash": {
+              "type": "string"
+            },
+            "hashMismatch": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "params"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^simulation\\.note\\."
+        },
+        "params": {
+          "$ref": "#/$defs/stringMap"
+        }
+      }
+    },
+    "balanceChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["account", "asset", "post", "pre"],
+      "properties": {
+        "account": {
+          "$ref": "#/$defs/address"
+        },
+        "asset": {
+          "anyOf": [
+            {
+              "const": "SOL"
+            },
+            {
+              "$ref": "#/$defs/address"
+            }
+          ]
+        },
+        "owner": {
+          "$ref": "#/$defs/address"
+        },
+        "pre": {
+          "$ref": "#/$defs/u64"
+        },
+        "post": {
+          "$ref": "#/$defs/u64"
+        },
+        "decimals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "feeExcluded": {
+          "$ref": "#/$defs/u64"
+        },
+        "created": {
+          "type": "boolean"
+        },
+        "closed": {
+          "type": "boolean"
+        },
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "holderLabel": {
+          "$ref": "#/$defs/label"
+        }
+      }
+    },
+    "simulationResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "balanceChanges",
+            "feePayer",
+            "logs",
+            "logsTruncated",
+            "notes",
+            "slot",
+            "status"
+          ],
+          "properties": {
+            "slot": {
+              "$ref": "#/$defs/u64"
+            },
+            "feePayer": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["address", "source"],
+              "properties": {
+                "address": {
+                  "$ref": "#/$defs/address"
+                },
+                "source": {
+                  "enum": ["vault", "member", "transaction"]
+                }
+              }
+            },
+            "logs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 200
+            },
+            "logsTruncated": {
+              "type": "boolean"
+            },
+            "unitsConsumed": {
+              "$ref": "#/$defs/u64"
+            },
+            "fee": {
+              "$ref": "#/$defs/u64"
+            },
+            "innerPrograms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/address"
+              }
+            },
+            "notes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/note"
+              }
+            },
+            "batchItem": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "status": {
+              "const": "success"
+            },
+            "balanceChanges": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/balanceChange"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["error", "feePayer", "logs", "logsTruncated", "notes", "slot", "status"],
+          "properties": {
+            "slot": {
+              "$ref": "#/$defs/u64"
+            },
+            "feePayer": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["address", "source"],
+              "properties": {
+                "address": {
+                  "$ref": "#/$defs/address"
+                },
+                "source": {
+                  "enum": ["vault", "member", "transaction"]
+                }
+              }
+            },
+            "logs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 200
+            },
+            "logsTruncated": {
+              "type": "boolean"
+            },
+            "unitsConsumed": {
+              "$ref": "#/$defs/u64"
+            },
+            "fee": {
+              "$ref": "#/$defs/u64"
+            },
+            "innerPrograms": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/address"
+              }
+            },
+            "notes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/note"
+              }
+            },
+            "batchItem": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "status": {
+              "const": "failed"
+            },
+            "error": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "notes", "reason", "status"],
+          "properties": {
+            "status": {
+              "const": "unavailable"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "code": {
+              "enum": [
+                "too-large",
+                "rpc-refused",
+                "rpc-error",
+                "accounts-unresolved",
+                "no-fee-payer",
+                "build-failed"
+              ]
+            },
+            "notes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/note"
+              }
+            },
+            "batchItem": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      ]
+    },
+    "simulation": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/simulationResult"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["items", "notes", "status"],
+          "properties": {
+            "status": {
+              "const": "batch"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/simulationResult"
+              }
+            },
+            "notes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/note"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

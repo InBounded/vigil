@@ -1,0 +1,15 @@
+{
+  "capturedAt": "2026-09-23T10:50:36.139Z",
+  "description": "Verification API answers recorded with list-batch-drafts.json",
+  "endpoint": "https://verify.osec.io/status/",
+  "responses": {
+    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL": {
+      "status": 200,
+      "text": "{\"is_verified\":false,\"message\":\"On chain program not verified\",\"on_chain_hash\":\"\",\"executable_hash\":\"\",\"repo_url\":\"\",\"commit\":\"\",\"last_verified_at\":null,\"is_frozen\":false,\"is_closed\":false}"
+    },
+    "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA": {
+      "status": 200,
+      "text": "{\"is_verified\":true,\"message\":\"On chain program verified\",\"on_chain_hash\":\"435df1e70f1ca6258eb01a4507701688c7f1a22656e3e4ef361db473bf478075\",\"executable_hash\":\"435df1e70f1ca6258eb01a4507701688c7f1a22656e3e4ef361db473bf478075\",\"repo_url\":\"https://github.com/solana-program/token/tree/a94dd19750dc3b2409f73e15bb74754935b2a489\",\"commit\":\"a94dd19750dc3b2409f73e15bb74754935b2a489\",\"last_verified_at\":\"2026-06-04T03:10:01.260080\",\"is_frozen\":true,\"is_closed\":false}"
+    }
+  }
+}

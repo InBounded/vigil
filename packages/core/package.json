@@ -33,6 +33,7 @@
     "@solana/sysvars": "8.3.0",
     "@solana/web3.js": "1.99.0",
     "@sqds/multisig": "2.1.4",
+    "ajv": "8.20.0",
     "fast-check": "4.10.2"
   }
 }
