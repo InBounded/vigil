@@ -11,6 +11,7 @@ import type {
   AnalysisGapCode,
   DecodedAccount,
   DecodedInstruction,
+  InstructionSummary,
 } from "../report.js";
 import type { RpcClient } from "../rpc/types.js";
 import { sanitizeArgs } from "../sanitize/args.js";
@@ -453,26 +454,34 @@ function undecoded(
  * Generic i18n summary: key `ix.<program>.<instruction>`, params = every scalar argument plus
  * every named account role. Nested objects are flattened with dotted keys (`newMember.key`), and
  * arrays contribute their length as `<name>.count`. The UI template picks which params to show.
- * `null` becomes `"none"` (e.g. an authority being removed) so absence is always explicit.
+ * `null` becomes `"none"` (e.g. an authority being removed) so absence is always explicit, and the
+ * param is listed in `nullParams` so that an on-chain string reading "none" is never mistaken for
+ * it (and never translated).
  */
 function buildSummary(
   programKey: string,
   name: string,
   args: Readonly<Record<string, unknown>>,
   accounts: readonly DecodedAccount[],
-): { key: string; params: Record<string, string> } {
+): InstructionSummary {
   const params: Record<string, string> = {};
+  const nullParams: string[] = [];
   for (const account of accounts) {
     if (account.role !== undefined && !(account.role in params)) {
       params[account.role] = account.address;
     }
   }
-  addScalarParams(params, "", args);
-  return { key: `ix.${programKey}.${name}`, params };
+  addScalarParams(params, nullParams, "", args);
+  return {
+    key: `ix.${programKey}.${name}`,
+    params,
+    ...(nullParams.length === 0 ? {} : { nullParams }),
+  };
 }
 
 function addScalarParams(
   params: Record<string, string>,
+  nullParams: string[],
   prefix: string,
   values: Readonly<Record<string, unknown>>,
 ): void {
@@ -480,6 +489,7 @@ function addScalarParams(
     const name = `${prefix}${key}`;
     if (value === null) {
       params[name] = "none";
+      nullParams.push(name);
     } else if (
       typeof value === "bigint" ||
       typeof value === "number" ||
@@ -490,7 +500,7 @@ function addScalarParams(
     } else if (Array.isArray(value)) {
       params[`${name}.count`] = String(value.length);
     } else if (typeof value === "object" && !(value instanceof Uint8Array)) {
-      addScalarParams(params, `${name}.`, value as Readonly<Record<string, unknown>>);
+      addScalarParams(params, nullParams, `${name}.`, value as Readonly<Record<string, unknown>>);
     }
   }
 }

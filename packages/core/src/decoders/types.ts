@@ -1,5 +1,5 @@
 import type { Address, ReadonlyUint8Array } from "@solana/kit";
-import type { DecoderKind } from "../report.js";
+import type { DecoderKind, InstructionSummary } from "../report.js";
 
 export interface InstructionAccountInput {
   readonly address: Address;
@@ -26,7 +26,7 @@ export interface ProgramDecodeResult {
   readonly args?: Readonly<Record<string, unknown>>;
   /** Role per account position; `undefined` for positions with no named role (e.g. multisig signers). */
   readonly accountRoles?: readonly (string | undefined)[];
-  readonly summary?: { readonly key: string; readonly params: Readonly<Record<string, string>> };
+  readonly summary?: InstructionSummary;
   /** Nested instructions already resolved against this instruction's own accounts (Token `Batch`). */
   readonly innerInstructions?: readonly InstructionInput[];
   /** A nested transaction message that must be resolved (possibly via lookup tables) and decoded. */

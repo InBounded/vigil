@@ -17,8 +17,12 @@ import ptPT from "./pt-PT.json" with { type: "json" };
  * - any other type: the catalog's `<type>.<value>` text if there is one, else the value;
  * - `authority`: an SPL Token / Token-2022 `AuthorityType` name; `stakeAuthorize`: a Stake
  *   `StakeAuthorize` value (0 = staker, 1 = withdrawer).
- * When a param a template needs is missing or `"none"`, and a `<key>.without.<param>` template
- * exists, that one is used instead (e.g. "makes the program immutable" when no new authority).
+ * When a param a template needs is missing or null, and a `<key>.without.<param>` template exists,
+ * that one is used instead (e.g. "makes the program immutable" when no new authority). A param is
+ * null when it reads `"none"` *and* the summary lists it in `nullParams` (the argument was null);
+ * any other value, including on-chain text reading "none", is shown exactly as written. Findings
+ * are built by Vigil's own rules, so there `"none"` is always the "no value" marker (their
+ * on-chain text uses `{x:text}`).
  *
  * Output is plain text. Every param already went through the sanitizer; interfaces must still
  * render the result as text, never as HTML.
@@ -117,7 +121,14 @@ export function renderSummary(instruction: DecodedInstruction, locale: Locale): 
       text: t("ix.noSummary", locale, { name: instruction.name ?? "?" }),
     };
   }
-  return renderTemplate(summary.key, summary.params, labels, locale);
+  const nulls = new Set(summary.nullParams ?? []);
+  return renderTemplate(
+    summary.key,
+    summary.params,
+    labels,
+    locale,
+    (name, value) => value === "none" && nulls.has(name),
+  );
 }
 
 /**
@@ -141,11 +152,20 @@ export function renderFinding(
   if (CATALOGS[locale][finding.titleKey] === undefined) {
     return { missing: [finding.titleKey], text: finding.titleKey };
   }
-  const rendered = renderTemplate(finding.titleKey, finding.params, labels, locale);
+  const rendered = renderTemplate(
+    finding.titleKey,
+    finding.params,
+    labels,
+    locale,
+    (_name, value) => value === "none",
+  );
   return finding.params.proposed === "true"
     ? { missing: rendered.missing, text: `${rendered.text} ${t("finding.proposed", locale)}` }
     : rendered;
 }
+
+/** `true` when a param's value means "no value" (see the module comment). */
+type IsNull = (name: string, value: string) => boolean;
 
 /** Fills in a catalog template (which must exist), choosing a `.without.<param>` form if needed. */
 function renderTemplate(
@@ -153,6 +173,7 @@ function renderTemplate(
   params: Readonly<Record<string, string>>,
   labels: ReadonlyMap<Address, AccountLabel>,
   locale: Locale,
+  isNull: IsNull,
 ): Rendered {
   const catalog = CATALOGS[locale];
   let key = baseKey;
@@ -160,7 +181,11 @@ function renderTemplate(
   for (const [, name] of template.matchAll(PLACEHOLDER)) {
     const value = name === undefined ? undefined : params[name];
     const alternative = catalog[`${key}.without.${name}`];
-    if ((value === undefined || value === "none") && alternative !== undefined) {
+    if (
+      name !== undefined &&
+      (value === undefined || isNull(name, value)) &&
+      alternative !== undefined
+    ) {
       key = `${key}.without.${name}`;
       template = alternative;
       break;
@@ -173,7 +198,8 @@ function renderTemplate(
       missing.push(name);
       return t("common.unknown", locale);
     }
-    return formatParam(value ?? "", type, params, labels, locale, missing, name);
+    const isNone = value !== undefined && isNull(name, value);
+    return formatParam(value ?? "", type, params, labels, locale, missing, name, isNone);
   });
   return { missing, text };
 }
@@ -186,11 +212,17 @@ function formatParam(
   locale: Locale,
   missing: string[],
   name: string,
+  isNone: boolean,
 ): string {
   switch (type) {
     case "address": {
-      if (value === "none" || value === "unknown") {
-        return t(`common.${value}`, locale);
+      if (isNone) {
+        return t("common.none", locale);
+      }
+      // Rules write "unknown" for an account an instruction does not have; a real address never
+      // reads "unknown".
+      if (value === "unknown") {
+        return t("common.unknown", locale);
       }
       const label = labels.get(value as Address);
       return label === undefined ? shortAddress(value) : renderLabel(label, locale, true, value);
@@ -211,14 +243,14 @@ function formatParam(
     case "duration":
       return /^\d+$/.test(value) ? formatDuration(BigInt(value), locale) : value;
     case "permissions":
-      return value === "none"
+      return isNone
         ? t("common.none", locale)
         : value
             .split(",")
             .map((permission) => CATALOGS[locale][`permission.${permission}`] ?? permission)
             .join(", ");
     default:
-      if (value === "none") {
+      if (isNone) {
         return t("common.none", locale);
       }
       // Any other `{name:type}`: the catalog's `<type>.<value>` text if there is one (e.g.

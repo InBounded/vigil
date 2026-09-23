@@ -33,6 +33,18 @@ export interface DecodedAccount {
   readonly fromLookupTable?: Address;
 }
 
+/** i18n key + string params; the UI owns the wording. */
+export interface InstructionSummary {
+  readonly key: string;
+  readonly params: Readonly<Record<string, string>>;
+  /**
+   * Params whose value is `"none"` because the argument was null (e.g. an authority being
+   * removed). Every other value, including an on-chain string that happens to read "none", is
+   * shown exactly as written. Not in the original `AGENTS.md` contract; see `docs/DECISIONS.md`.
+   */
+  readonly nullParams?: readonly string[];
+}
+
 export interface DecodedInstruction {
   readonly index: number;
   readonly batchItem?: number;
@@ -40,8 +52,7 @@ export interface DecodedInstruction {
   readonly programLabel?: string;
   readonly decoder: DecoderKind;
   readonly name?: string;
-  /** i18n key + string params; the UI owns the wording. */
-  readonly summary?: { readonly key: string; readonly params: Readonly<Record<string, string>> };
+  readonly summary?: InstructionSummary;
   readonly args?: Readonly<Record<string, unknown>>;
   readonly accounts: readonly DecodedAccount[];
   readonly rawDataHex: string;

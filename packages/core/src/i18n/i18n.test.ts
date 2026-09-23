@@ -1,7 +1,11 @@
 import { readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { type Address, address, type Signature } from "@solana/kit";
+import * as memoProgram from "@solana-program/memo";
+import * as system from "@solana-program/system";
+import * as token from "@solana-program/token";
 import { AuthorityType } from "@solana-program/token";
+import * as token2022 from "@solana-program/token-2022";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { annotateInstructions } from "../annotate.js";
 import { PROGRAM_DECODERS } from "../decoders/decode.js";
@@ -12,6 +16,7 @@ import { FixtureRpcClient } from "../rpc/fixture-client.js";
 import { loadFixtureFile } from "../rpc/fixture-file.js";
 import type { FixtureData } from "../rpc/index.js";
 import { SquadsV4Adapter } from "../squads/adapter.js";
+import { addr, decodeBuilt, signer } from "../test-support/rules.js";
 import {
   CATALOGS,
   formatAmount,
@@ -223,5 +228,68 @@ describe("summaries of real mainnet instructions", () => {
       "en",
     ).text;
     expect(text).toBe("Instruction that could not be decoded: what it does is unknown");
+  });
+});
+
+describe("on-chain text in summaries is never translated", () => {
+  const A = addr(1);
+  const B = addr(2);
+
+  it("shows a memo and a seed that read “none” exactly as written", () => {
+    const memo = decodeBuilt(memoProgram.getAddMemoInstruction({ memo: "none" }));
+    expect(memo.summary?.nullParams).toBeUndefined();
+    expect(renderSummary(memo, "pt-PT").text).toBe("Adiciona a nota “none”");
+    const seeded = decodeBuilt(
+      system.getCreateAccountWithSeedInstruction({
+        amount: 1n,
+        base: A,
+        baseAccount: signer(A),
+        newAccount: B,
+        payer: signer(A),
+        programAddress: A,
+        seed: "none",
+        space: 0n,
+      }),
+    );
+    expect(renderSummary(seeded, "pt-PT").text).toContain("(semente “none”)");
+  });
+
+  it("still says “none” for an argument that is really null, in each language", () => {
+    const pointer = decodeBuilt(
+      token2022.getInitializeMetadataPointerInstruction({
+        authority: null,
+        metadataAddress: B,
+        mint: A,
+      }),
+    );
+    expect(pointer.summary?.nullParams).toEqual(["authority"]);
+    expect(renderSummary(pointer, "en").text).toMatch(/\(authority none\)$/);
+    expect(renderSummary(pointer, "pt-PT").text).toMatch(/\(autoridade nenhum\)$/);
+    const removed = decodeBuilt(
+      token.getSetAuthorityInstruction({
+        authorityType: AuthorityType.FreezeAccount,
+        newAuthority: null,
+        owned: A,
+        owner: B,
+      }),
+    );
+    expect(renderSummary(removed, "en").text).toBe(
+      `Removes the freeze authority of ${shortAddress(A)} permanently`,
+    );
+  });
+
+  it("does not treat a value reading “none” as absent unless the summary says it was null", () => {
+    const instruction = decodeBuilt(memoProgram.getAddMemoInstruction({ memo: "x" }));
+    const summary = {
+      key: "ix.token.setAuthority",
+      params: { authorityType: "MintTokens", newAuthority: "none", owned: A },
+    };
+    expect(renderSummary({ ...instruction, summary }, "en").text).toBe(
+      `Changes the mint authority of ${shortAddress(A)} to none`,
+    );
+    expect(
+      renderSummary({ ...instruction, summary: { ...summary, nullParams: ["newAuthority"] } }, "en")
+        .text,
+    ).toBe(`Removes the mint authority of ${shortAddress(A)} permanently`);
   });
 });
