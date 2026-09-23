@@ -64,8 +64,8 @@ export const unverifiedProgram: Rule = {
   defaultSeverity: "warning",
   docs: {
     falsePositives:
-      "Many honest programs are not verified builds. Programs in Vigil's curated registry (native programs, SPL Token, Squads) are not checked. When the verification service cannot be reached the status is unknown and the analysis is also marked incomplete.",
-    what: "A program the transaction calls whose deployed code is not a verified build of public source code, or whose verification status could not be established.",
+      "Many honest programs are not verified builds. Programs in Vigil's curated registry (native programs, SPL Token, Squads) are not checked. When the verification service cannot be reached the status is unknown and the analysis is also marked incomplete. When you turn verification lookups off, this rule does not fire: the report lists that choice as a gap instead.",
+    what: "A program the transaction calls whose deployed code is not a verified build of public source code, or whose verification status was looked up but could not be established.",
     why: "Without a verified build, nobody can check that the deployed code matches any published source.",
   },
   evaluate(context) {
@@ -73,7 +73,8 @@ export const unverifiedProgram: Rule = {
     for (const [program, at] of calledPrograms(context)) {
       const verification =
         context.programs.find((p) => p.address === program)?.verification ?? "unknown";
-      if (verification === "verified") {
+      // `not-checked`: the user turned lookups off; that choice is a gap, not a warning per program.
+      if (verification === "verified" || verification === "not-checked") {
         continue;
       }
       findings.push(

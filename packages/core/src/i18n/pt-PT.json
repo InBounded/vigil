@@ -418,6 +418,7 @@
   "simulation.status.unavailable": "Não foi possível executar a simulação: {reason:text}",
   "stakeAuthorize.0": "autoridade de stake",
   "stakeAuthorize.1": "autoridade de levantamento",
+  "verification.not-checked": "não consultada (consultas de verificação desativadas)",
   "verification.unknown": "desconhecida",
   "verification.unverified": "não verificado",
   "verification.verified": "verificado"

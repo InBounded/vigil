@@ -55,7 +55,7 @@ const byRule = (findings: readonly Finding[], id: string) =>
 async function gather(
   instructions: readonly DecodedInstruction[],
   vaults: readonly { address: Address; index: number }[],
-  verification: "recorded" | "unreachable",
+  verification: "recorded" | "unreachable" | "disabled",
   extraBuffers: FixtureData | undefined = undefined,
 ) {
   const merged: FixtureData = {
@@ -78,7 +78,7 @@ async function gather(
         );
   const verified = await addVerification(facts.programs, {
     cache: new VerificationCache({ now: () => 0 }),
-    enabled: true,
+    enabled: verification !== "disabled",
     http,
   });
   const gaps: AnalysisGap[] = [...facts.gaps, ...verified.gaps];
@@ -106,7 +106,7 @@ describe("raw Raydium CPMM swap (idl-programs.json, 2a6Uy... in x2L9pQd7)", () =
   });
 
   async function evaluate(
-    verification: "recorded" | "unreachable",
+    verification: "recorded" | "unreachable" | "disabled",
   ): Promise<{ findings: Finding[]; ctx: RuleContext }> {
     const facts = await gather(instructions, [], verification);
     const ctx = await context({
@@ -161,6 +161,22 @@ describe("raw Raydium CPMM swap (idl-programs.json, 2a6Uy... in x2L9pQd7)", () =
         ctx.gaps,
       ),
     ).toBe("incomplete");
+  });
+
+  it("no VGL-W002 when the user turned verification off: one gap and an incomplete verdict instead", async () => {
+    const { findings, ctx } = await evaluate("disabled");
+    expect(byRule(findings, "VGL-W002")).toEqual([]);
+    expect(ctx.programs.find((p) => p.address === CPMM)?.verification).toBe("not-checked");
+    expect(ctx.gaps.filter((g) => g.code.startsWith("PROGRAM_VERIFICATION"))).toEqual([
+      {
+        code: "PROGRAM_VERIFICATION_DISABLED",
+        message:
+          "program verification lookups are turned off, so no program's verified-build status is known",
+      },
+    ]);
+    // Facts that do not depend on the API are unaffected.
+    expect(byRule(findings, "VGL-W003")).toHaveLength(1);
+    expect(computeVerdict(findings, ctx.gaps)).toBe("incomplete");
   });
 });
 

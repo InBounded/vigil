@@ -418,6 +418,7 @@
   "simulation.status.unavailable": "The simulation could not be run: {reason:text}",
   "stakeAuthorize.0": "stake authority",
   "stakeAuthorize.1": "withdraw authority",
+  "verification.not-checked": "not checked (verification lookups turned off)",
   "verification.unknown": "unknown",
   "verification.unverified": "not verified",
   "verification.verified": "verified"

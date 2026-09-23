@@ -116,11 +116,11 @@ Findings about an instruction inside a Squads proposal that the analysed transac
 
 ### VGL-W002 — Program not verified
 
-**What it checks.** A program the transaction calls whose deployed code is not a verified build of public source code, or whose verification status could not be established.
+**What it checks.** A program the transaction calls whose deployed code is not a verified build of public source code, or whose verification status was looked up but could not be established.
 
 **Why it matters.** Without a verified build, nobody can check that the deployed code matches any published source.
 
-**False positives.** Many honest programs are not verified builds. Programs in Vigil's curated registry (native programs, SPL Token, Squads) are not checked. When the verification service cannot be reached the status is unknown and the analysis is also marked incomplete.
+**False positives.** Many honest programs are not verified builds. Programs in Vigil's curated registry (native programs, SPL Token, Squads) are not checked. When the verification service cannot be reached the status is unknown and the analysis is also marked incomplete. When you turn verification lookups off, this rule does not fire: the report lists that choice as a gap instead.
 
 ### VGL-W003 — Program upgradeable by a third party
 

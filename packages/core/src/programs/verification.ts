@@ -56,7 +56,7 @@ export class VerificationCache {
 }
 
 export interface VerificationOptions {
-  /** `false`: never contact the API (user choice); every program is `unknown`, one gap says why. */
+  /** `false`: never contact the API (user choice); every program is `not-checked`, one gap says why. */
   readonly enabled: boolean;
   readonly http: HttpClient;
   readonly cache: VerificationCache;
@@ -187,7 +187,9 @@ export async function addVerification(
                   "program verification lookups are turned off, so no program's verified-build status is known",
               },
             ],
-      programs,
+      programs: programs.map((program) =>
+        askable.includes(program) ? { ...program, verification: "not-checked" } : program,
+      ),
     };
   }
   const gaps: AnalysisGap[] = [];

@@ -137,6 +137,14 @@ describe("VGL-W002 program not verified", () => {
     });
     expect(unverifiedProgram.evaluate(ctx)).toEqual([]);
   });
+
+  it("does not fire when the user turned verification lookups off (a gap says so instead)", async () => {
+    const ctx = await context({
+      instructions: [call(THIRD_PARTY_PROGRAM)],
+      programs: [info("not-checked")],
+    });
+    expect(unverifiedProgram.evaluate(ctx)).toEqual([]);
+  });
 });
 
 describe("VGL-W003 program upgradeable by a third party", () => {

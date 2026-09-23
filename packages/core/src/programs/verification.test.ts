@@ -228,7 +228,17 @@ describe("cache and opt-out", () => {
       http,
     });
     expect(http.calls).toBe(0);
-    expect(result.programs).toEqual(facts);
+    // Deployed programs are marked `not-checked` (a user choice, not an unknown status); native ones
+    // are never asked and stay as they were.
+    expect(result.programs).toEqual(
+      facts.map((p) =>
+        p.loader === "native" || p.loader === "not-a-program"
+          ? p
+          : { ...p, verification: "not-checked" },
+      ),
+    );
+    expect(byAddress(result.programs, SYSTEM)?.verification).toBe("unknown");
+    expect(result.programs.some((p) => p.verification === "not-checked")).toBe(true);
     expect(result.gaps.map((g) => g.code)).toEqual(["PROGRAM_VERIFICATION_DISABLED"]);
     const nativeOnly = await addVerification(
       facts.filter((p) => p.address === SYSTEM),

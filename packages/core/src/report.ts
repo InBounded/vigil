@@ -191,8 +191,12 @@ export interface ProgramInfo {
   readonly programData?: Address;
   /** solana-verify compatible hash of the deployed code, when known. */
   readonly executableHash?: string;
-  /** Verified build status from the program-verification API; `unknown` when it could not be asked. */
-  readonly verification: "verified" | "unverified" | "unknown";
+  /**
+   * Verified build status from the program-verification API. `unknown`: it was asked (or should
+   * have been) and the status could not be established; `not-checked`: the user turned verification
+   * lookups off, so it was never asked (a `PROGRAM_VERIFICATION_DISABLED` gap says so).
+   */
+  readonly verification: "verified" | "unverified" | "unknown" | "not-checked";
   /** Owning loader, when the program account was read. */
   readonly loader?: ProgramLoader;
   /** Slot of the last deployment or upgrade (ProgramData header), when known. */
