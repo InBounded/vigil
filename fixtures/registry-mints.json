@@ -2,7 +2,7 @@
   "capturedAt": "2026-09-23T00:31:51.461Z",
   "cluster": "mainnet",
   "contextSlot": "449541153",
-  "description": "PLACEHOLDER",
+  "description": "Live mainnet mint accounts for every token in packages/core/src/registry/tokens.json (USDC, USDT, wSOL, mSOL, JitoSOL, JupSOL, INF) and their Metaplex metadata accounts, captured 2026-09-22 to confirm each registry entry's owner program and decimals against the chain.",
   "accounts": {
     "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": {
       "dataBase64": "AQAAAJj+huiNm+Lqi8HMpIeLKYjCQPUrhCS/tA7Rot3LXhmbaeXM/GtBHAAGAQEAAABicKqKWcWUBbRShshncubNEm6bil06OFNtN/e0FOi2Zw==",
