@@ -11,7 +11,7 @@ apps/rpc-proxy  ──┘         │
                              ├── rpc/        (RpcClient, injected — built: KitRpcClient + FixtureRpcClient)
                              ├── squads/     (MultisigAdapter, Squads v4 — built: SquadsV4Adapter)
                              ├── decoders/   (native + Squads + raw transactions — built in Phase 3A; IDL-driven: not yet)
-                             ├── rules/      (risk findings — not built yet)
+                             ├── rules/      (risk rules — built in Phase 4)
                              └── sanitize/   (on-chain string sanitizer — not built yet)
 ```
 
@@ -43,7 +43,13 @@ apps/rpc-proxy  ──┘         │
   - `packages/core/src/decoders/decode.ts`: the pipeline. Pure decoding over a shared account-index model (static → lookup writable → lookup readonly); lookup tables fetched in rounds via `getMultipleAccounts` (`lookup-tables.ts`); every undecodable or unresolvable thing becomes an `AnalysisGap`, never a silent omission.
   - Entry points: `decodeRawTransaction` (base64 legacy/v0 wire transaction; v1 rejected for now) and `decodeVaultTransactionMessage` (a Squads proposal's stored message).
   - Not yet built: v1 transactions, IDL-driven decoders, config-action summaries, risk rules, the sanitizer, the full report, both UIs.
-- **Phase 3B+:** to be documented here as they land.
+- **Phase 3B:** IDL decoding, registry and labels, sanitizer, plain-language summaries (see `docs/DECISIONS.md`).
+- **Phase 4 (risk rules):**
+  - `packages/core/src/rules/`: 27 pure, deterministic rules (`RULES`) over a `RuleContext` built by `createRuleContext` (partial report, multisig, proposal, options, known addresses, facts gathered beforehand); `runRules` orders the findings (VGL-W011 first) and `computeVerdict` applies the verdict rule. Rule metadata generates `docs/rules.md` (`pnpm docs:rules`).
+  - `packages/core/src/report.ts`: `Finding`, `Severity`, `Verdict`, and the rule inputs Phase 5 fills (`ProgramInfo`, `SimulationResult`, `ConfigAction`).
+  - `packages/core/src/i18n/render.ts`: `renderFinding` (en, pt-PT).
+  - Not yet built: gathering the facts the rules read (balances, history, program/buffer accounts, verification, simulation), report assembly, both UIs.
+- **Phase 5+:** to be documented here as they land.
 
 ## Central contract
 
