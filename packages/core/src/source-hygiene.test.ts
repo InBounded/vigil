@@ -12,7 +12,7 @@ const EXTENSIONS = new Set([".ts", ".tsx", ".js", ".mjs", ".json", ".md", ".css"
  * "Trojan Source" guard: bidirectional-control and invisible characters in source files make code
  * or test data read differently from what it is. Tests that need them must write `\u` escapes.
  */
-const INVISIBLE = /[\u00A0\u061C\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/u;
+const INVISIBLE = /[\u00A0\u061C\u200B-\u200F\u2028-\u202E\u2060-\u2069\uFEFF\u{E0000}-\u{E007F}]/u;
 
 async function* files(dir: string): AsyncGenerator<string> {
   for (const entry of await readdir(dir, { withFileTypes: true })) {

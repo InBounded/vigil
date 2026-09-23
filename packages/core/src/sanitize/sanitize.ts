@@ -20,6 +20,11 @@ export type SanitizeFlag =
   | "bidi-removed"
   /** Zero-width characters were removed (they can hide inside an otherwise familiar string). */
   | "zero-width-removed"
+  /**
+   * Other invisible characters were removed: Unicode tag characters (U+E0000–U+E007F, which can
+   * smuggle hidden text) and the line/paragraph separators U+2028/U+2029.
+   */
+  | "invisible-removed"
   | "truncated"
   /** A token symbol contains characters outside printable ASCII (possible look-alike). */
   | "non-ascii"
@@ -45,14 +50,19 @@ const FLAG_ORDER: readonly SanitizeFlag[] = [
   "control-chars-removed",
   "bidi-removed",
   "zero-width-removed",
+  "invisible-removed",
   "truncated",
   "non-ascii",
   "mixed-scripts",
 ];
 
-type RemovalFlag = "control-chars-removed" | "bidi-removed" | "zero-width-removed";
+type RemovalFlag =
+  | "control-chars-removed"
+  | "bidi-removed"
+  | "zero-width-removed"
+  | "invisible-removed";
 
-/** Character classes from `docs/reference.md` §11. */
+/** Character classes from `docs/reference.md` §11 (tags and U+2028/U+2029 added in Phase 3B). */
 function removalReason(codePoint: number, kind: SanitizeKind): RemovalFlag | null {
   if (codePoint <= 0x1f || (codePoint >= 0x7f && codePoint <= 0x9f)) {
     return kind === "memo" && codePoint === 0x0a ? null : "control-chars-removed";
@@ -72,6 +82,13 @@ function removalReason(codePoint: number, kind: SanitizeKind): RemovalFlag | nul
     codePoint === 0xfeff
   ) {
     return "zero-width-removed";
+  }
+  if (
+    (codePoint >= 0xe0000 && codePoint <= 0xe007f) ||
+    codePoint === 0x2028 ||
+    codePoint === 0x2029
+  ) {
+    return "invisible-removed";
   }
   return null;
 }

@@ -14,6 +14,8 @@ const REMOVED_RANGES: ReadonlyArray<readonly [number, number]> = [
   [0x200b, 0x200d],
   [0x2060, 0x2060],
   [0xfeff, 0xfeff],
+  [0x2028, 0x2029],
+  [0xe0000, 0xe007f],
 ];
 
 function isRemoved(codePoint: number, kind: SanitizeKind): boolean {
@@ -48,6 +50,19 @@ describe("sanitizeOnchainString: zero-width", () => {
     const result = sanitizeOnchainString("\uFEFFJ\u200CU\u200DP\u2060", "name");
     expect(result.text).toBe("JUP");
     expect(result.flags).toEqual(["zero-width-removed"]);
+  });
+});
+
+describe("sanitizeOnchainString: other invisible characters", () => {
+  it("removes Unicode tag characters, which can smuggle hidden text", () => {
+    // "USDC" followed by the tag-encoded text "hi" (U+E0068 U+E0069) and a cancel tag.
+    const result = sanitizeOnchainString("USDC\u{E0068}\u{E0069}\u{E007F}", "symbol");
+    expect(result).toEqual({ flags: ["invisible-removed"], modified: true, text: "USDC" });
+  });
+
+  it("removes line and paragraph separators, also in memos", () => {
+    const result = sanitizeOnchainString("a\u2028b\u2029c\nd", "memo");
+    expect(result).toEqual({ flags: ["invisible-removed"], modified: true, text: "abc\nd" });
   });
 });
 
@@ -135,7 +150,18 @@ describe("sanitizeOnchainString: properties", () => {
   const kinds = fc.constantFrom<SanitizeKind>("name", "symbol", "memo", "text");
   const hostile = fc.string({
     unit: fc.oneof(
-      fc.constantFrom("\u202E", "\u2066", "\u200B", "\uFEFF", "\u0000", "\n", "\u0085", "\u061C"),
+      fc.constantFrom(
+        "\u{E0041}",
+        "\u2028",
+        "\u202E",
+        "\u2066",
+        "\u200B",
+        "\uFEFF",
+        "\u0000",
+        "\n",
+        "\u0085",
+        "\u061C",
+      ),
       fc.string({ maxLength: 1, minLength: 1, unit: "grapheme" }),
     ),
   });
