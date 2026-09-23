@@ -5,8 +5,9 @@ import type { SanitizerNote } from "./sanitize/args.js";
 /**
  * Where a piece of information in a report comes from. See `AGENTS.md` → "Fidelity above all".
  *
- * Only the subset of the `AnalysisReport` contract needed by instruction decoding (Phase 3A) is
- * defined here so far; the rest of the report is assembled in a later phase.
+ * Only the subset of the `AnalysisReport` contract needed so far (decoding in Phase 3, findings and
+ * the inputs of the risk rules in Phase 4) is defined here; the report itself is assembled in a
+ * later phase.
  */
 export type Provenance =
   | "onchain"
@@ -78,6 +79,9 @@ export const ANALYSIS_GAP_CODES = [
   "IDL_INVALID",
   "IDL_AT_URL",
   "IDL_UNSUPPORTED",
+  "SIMULATION_DISABLED",
+  "PROGRAM_VERIFICATION_UNKNOWN",
+  "TRANSFER_BALANCE_UNKNOWN",
 ] as const;
 
 export type AnalysisGapCode = (typeof ANALYSIS_GAP_CODES)[number];
@@ -94,3 +98,104 @@ export interface AnalysisGap {
   /** Address the gap relates to (a program, lookup table, ...), if any. */
   readonly address?: Address;
 }
+
+export type Severity = "critical" | "warning" | "info";
+
+/** `critical` if any critical finding; else `incomplete` if any gap; else `attention` if any
+ * warning; else `no-findings` (shown as "No findings from the checks performed", never "safe"). */
+export type Verdict = "critical" | "incomplete" | "attention" | "no-findings";
+
+export interface Finding {
+  /** e.g. `VGL-C001`. */
+  readonly ruleId: string;
+  readonly severity: Severity;
+  /** i18n key of the finding's sentence; `params` fill it in. */
+  readonly titleKey: string;
+  /**
+   * Template params (addresses, amounts in base units with `decimals`/`mint`/`symbol`, ...). When
+   * `proposed` is `"true"` the instruction behind the finding is inside a Squads proposal that the
+   * analysed transaction only *creates*: it happens only if that proposal is later approved and
+   * executed.
+   */
+  readonly params: Readonly<Record<string, string>>;
+  /** Top-level instruction the finding is about (for a nested instruction, its top-level parent). */
+  readonly instructionIndex?: number;
+  /** Concrete facts behind the finding, as `field: value` lines (not translated). */
+  readonly evidence: readonly string[];
+  readonly provenance: Provenance;
+}
+
+/** An amount's asset: native SOL, or a token mint. `"SOL"` can never be an address (base58 has no `O`). */
+export type AssetId = "SOL" | Address;
+
+/**
+ * What is known about a program the transaction calls or changes. Gathered before the rules run
+ * (account reads and the verification API); every field that could not be established says so.
+ */
+export interface ProgramInfo {
+  readonly address: Address;
+  /**
+   * `immutable`: cannot be changed (no upgrade authority, or not an upgradeable-loader program);
+   * `upgradeable`: `authority` can replace its code at any time; `unknown`: could not be read.
+   */
+  readonly upgrade:
+    | { readonly kind: "immutable" }
+    | { readonly kind: "upgradeable"; readonly authority: Address }
+    | { readonly kind: "unknown" };
+  /** The program's ProgramData account (upgradeable loader), when known. */
+  readonly programData?: Address;
+  /** solana-verify compatible hash of the deployed code, when known. */
+  readonly executableHash?: string;
+  /** Verified build status from the program-verification API; `unknown` when it could not be asked. */
+  readonly verification: "verified" | "unverified" | "unknown";
+}
+
+/** A balance the simulation reports as changed, in base units (lamports for SOL). */
+export interface BalanceChange {
+  readonly account: Address;
+  readonly asset: AssetId;
+  /** Owner of the token account, for token balances. */
+  readonly owner?: Address;
+  readonly pre: bigint;
+  readonly post: bigint;
+}
+
+/**
+ * Outcome of simulating the transaction. Absent from a report when simulation was not attempted
+ * (turned off by the user: that is a `SIMULATION_DISABLED` gap instead).
+ */
+export type SimulationResult =
+  | { readonly status: "success"; readonly balanceChanges: readonly BalanceChange[] }
+  | { readonly status: "failed"; readonly error: string }
+  | { readonly status: "unavailable"; readonly reason: string };
+
+export type SpendingLimitPeriod = "OneTime" | "Day" | "Week" | "Month";
+
+/**
+ * A change to a Squads multisig's settings: an action of a config transaction, or one of the
+ * direct `multisig*` instructions a controlled multisig's config authority can call.
+ */
+export type ConfigAction =
+  | {
+      readonly kind: "addMember";
+      readonly member: Address;
+      readonly permissions: readonly ("Initiate" | "Vote" | "Execute")[];
+    }
+  | { readonly kind: "removeMember"; readonly member: Address }
+  | { readonly kind: "changeThreshold"; readonly newThreshold: number }
+  | { readonly kind: "setTimeLock"; readonly newTimeLockSeconds: number }
+  | {
+      readonly kind: "addSpendingLimit";
+      readonly createKey: Address;
+      readonly vaultIndex: number;
+      /** `11111111111111111111111111111111` (`Pubkey::default()`) means SOL. */
+      readonly mint: Address;
+      readonly amount: bigint;
+      readonly period: SpendingLimitPeriod;
+      readonly members: readonly Address[];
+      /** Empty means any destination. */
+      readonly destinations: readonly Address[];
+    }
+  | { readonly kind: "removeSpendingLimit"; readonly spendingLimit: Address }
+  | { readonly kind: "setRentCollector"; readonly newRentCollector: Address | null }
+  | { readonly kind: "setConfigAuthority"; readonly newConfigAuthority: Address };
