@@ -41,6 +41,8 @@ export interface FixtureData {
   readonly genesisHash?: string;
   /** Recorded simulations, keyed by the exact base64 wire transaction that was simulated. */
   readonly simulations?: ReadonlyMap<string, RecordedSimulation>;
+  /** Recorded `getSignaturesForAddress` answers (newest first), keyed by address. */
+  readonly signatures?: ReadonlyMap<Address, readonly SignatureInfo[]>;
 }
 
 /**
@@ -87,11 +89,19 @@ export class FixtureRpcClient implements RpcClient {
     return Promise.resolve(this.#data.contextSlot);
   }
 
+  /**
+   * Replays a recorded answer for this address, cut to `limit`. Paging (`before`) and addresses
+   * with no recording are not supported: a replay must not invent history.
+   */
   getSignaturesForAddress(
-    _address: Address,
-    _options?: RpcReadOptions & { readonly limit?: number; readonly before?: Signature },
+    address: Address,
+    options?: RpcReadOptions & { readonly limit?: number; readonly before?: Signature },
   ): Promise<readonly SignatureInfo[]> {
-    throw new FixtureNotSupportedError("getSignaturesForAddress");
+    const recorded = this.#data.signatures?.get(address);
+    if (recorded === undefined || options?.before !== undefined) {
+      throw new FixtureNotSupportedError("getSignaturesForAddress");
+    }
+    return Promise.resolve(recorded.slice(0, options?.limit ?? recorded.length));
   }
 
   getTransaction(

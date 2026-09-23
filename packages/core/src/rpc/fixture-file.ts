@@ -2,7 +2,14 @@ import { readFile } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
 import type { Address, Signature } from "@solana/kit";
 import type { FixtureData, RecordedSimulation } from "./fixture-client.js";
-import type { AccountInfo, RpcTokenBalance, SimulateResult, TransactionResult } from "./types.js";
+import type {
+  AccountInfo,
+  CommitmentLevel,
+  RpcTokenBalance,
+  SignatureInfo,
+  SimulateResult,
+  TransactionResult,
+} from "./types.js";
 
 /**
  * On-disk shape written by `scripts/capture-fixture.ts` and read by `loadFixtureFile`. `bigint`
@@ -18,6 +25,16 @@ export interface FixtureFile {
   readonly transactions?: Readonly<Record<string, FixtureTransactionRecord>>;
   /** Keyed by the exact base64 wire transaction simulated. */
   readonly simulations?: Readonly<Record<string, FixtureSimulationRecord>>;
+  /** `getSignaturesForAddress` answers, newest first, keyed by address. */
+  readonly signatures?: Readonly<Record<string, readonly FixtureSignatureRecord[]>>;
+}
+
+export interface FixtureSignatureRecord {
+  readonly signature: string;
+  readonly slot: string;
+  readonly err: unknown | null;
+  readonly blockTime: string | null;
+  readonly confirmationStatus: CommitmentLevel | null;
 }
 
 export interface FixtureTokenBalanceRecord {
@@ -95,11 +112,15 @@ export async function loadFixtureFiles(paths: readonly string[]): Promise<Fixtur
   const accounts = new Map<Address, AccountInfo>();
   const transactions = new Map<Signature, TransactionResult>();
   const simulations = new Map<string, RecordedSimulation>();
+  const signatures = new Map<Address, readonly SignatureInfo[]>();
   let contextSlot = 0n;
   let genesisHash: string | undefined;
   for (const part of parts) {
     for (const [transaction, simulation] of part.simulations ?? []) {
       simulations.set(transaction, simulation);
+    }
+    for (const [address, list] of part.signatures ?? []) {
+      signatures.set(address, list);
     }
     for (const [address, info] of part.accounts) {
       accounts.set(address, info);
@@ -115,6 +136,7 @@ export async function loadFixtureFiles(paths: readonly string[]): Promise<Fixtur
   return {
     accounts,
     contextSlot,
+    signatures,
     simulations,
     transactions,
     ...(genesisHash === undefined ? {} : { genesisHash }),
@@ -215,9 +237,23 @@ function fixtureDataFromFile(file: FixtureFile): FixtureData {
       transactionBase64: record.transactionBase64,
     });
   }
+  const signatures = new Map<Address, readonly SignatureInfo[]>();
+  for (const [address, records] of Object.entries(file.signatures ?? {})) {
+    signatures.set(
+      address as Address,
+      records.map((record) => ({
+        blockTime: record.blockTime === null ? null : BigInt(record.blockTime),
+        confirmationStatus: record.confirmationStatus,
+        err: record.err,
+        signature: record.signature as Signature,
+        slot: BigInt(record.slot),
+      })),
+    );
+  }
   return {
     accounts,
     contextSlot: BigInt(file.contextSlot),
+    signatures,
     simulations,
     transactions,
     ...(file.genesisHash === undefined ? {} : { genesisHash: file.genesisHash }),

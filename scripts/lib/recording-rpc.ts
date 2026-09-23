@@ -32,6 +32,8 @@ export class RecordingRpcClient implements RpcClient {
   readonly accounts = new Map<Address, AccountInfo>();
   readonly transactions = new Map<Signature, TransactionResult>();
   readonly simulations = new Map<string, RecordedCall>();
+  readonly signatures = new Map<Address, readonly SignatureInfo[]>();
+  genesisHash: string | undefined;
   contextSlot = 0n;
 
   constructor(inner: RpcClient) {
@@ -79,19 +81,24 @@ export class RecordingRpcClient implements RpcClient {
     }
   }
 
-  getGenesisHash(): Promise<string> {
-    return this.#inner.getGenesisHash();
+  async getGenesisHash(): Promise<string> {
+    this.genesisHash = await this.#inner.getGenesisHash();
+    return this.genesisHash;
   }
 
   getSlot(options?: RpcReadOptions): Promise<bigint> {
     return this.#inner.getSlot(options);
   }
 
-  getSignaturesForAddress(
+  async getSignaturesForAddress(
     address: Address,
     options?: RpcReadOptions & { readonly limit?: number; readonly before?: Signature },
   ): Promise<readonly SignatureInfo[]> {
-    return this.#inner.getSignaturesForAddress(address, options);
+    const result = await this.#inner.getSignaturesForAddress(address, options);
+    if (options?.before === undefined) {
+      this.signatures.set(address, result);
+    }
+    return result;
   }
 
   async getTransaction(signature: Signature, options?: RpcReadOptions) {
@@ -192,8 +199,20 @@ export function recordingToFixture(recording: RecordingRpcClient): Record<string
           }),
     };
   }
+  const signatures: Record<string, unknown> = {};
+  for (const [address, list] of recording.signatures) {
+    signatures[address] = list.map((entry) => ({
+      blockTime: entry.blockTime === null ? null : entry.blockTime.toString(),
+      confirmationStatus: entry.confirmationStatus,
+      err: entry.err,
+      signature: entry.signature,
+      slot: entry.slot.toString(),
+    }));
+  }
   return {
+    ...(recording.genesisHash === undefined ? {} : { genesisHash: recording.genesisHash }),
     ...(Object.keys(accounts).length > 0 ? { accounts } : {}),
+    ...(Object.keys(signatures).length > 0 ? { signatures } : {}),
     ...(Object.keys(transactions).length > 0 ? { transactions } : {}),
     ...(Object.keys(simulations).length > 0 ? { simulations } : {}),
   };
