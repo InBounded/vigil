@@ -47,10 +47,47 @@ export interface TransactionResult {
   readonly loadedAddresses: LoadedAddresses;
 }
 
+/** A token balance as the RPC reports it in `pre/postTokenBalances` (amount in base units). */
+export interface RpcTokenBalance {
+  /** Index into the transaction's account keys (static keys, then loaded writable, then readonly). */
+  readonly accountIndex: number;
+  readonly mint: Address;
+  readonly owner: Address | null;
+  readonly amount: bigint;
+  readonly decimals: number;
+}
+
+export interface SimulateOptions extends RpcReadOptions {
+  readonly replaceRecentBlockhash?: boolean;
+  /** Accounts whose post-simulation state to return (base64). */
+  readonly accounts?: readonly Address[];
+  readonly innerInstructions?: boolean;
+}
+
 export interface SimulateResult {
+  /** Slot of the bank the transaction was simulated against. */
+  readonly contextSlot: bigint;
   readonly err: unknown | null;
   readonly logs: readonly string[] | null;
   readonly unitsConsumed: bigint | null;
+  readonly fee: bigint | null;
+  /** Post-simulation state of `options.accounts`, in the same order; `null` if not requested. */
+  readonly accounts: ReadonlyArray<AccountInfo | null> | null;
+  /** Lamports per account key, as the RPC reports them (newer Agave only; else `null`). */
+  readonly preBalances: readonly bigint[] | null;
+  readonly postBalances: readonly bigint[] | null;
+  readonly preTokenBalances: readonly RpcTokenBalance[] | null;
+  readonly postTokenBalances: readonly RpcTokenBalance[] | null;
+  /** Addresses loaded from lookup tables, when reported. */
+  readonly loadedAddresses: LoadedAddresses | null;
+  /**
+   * Program ids of the inner (CPI) instructions, per top-level instruction index; `null` when
+   * inner instructions were not requested or not returned.
+   */
+  readonly innerInstructionPrograms: ReadonlyArray<{
+    readonly index: number;
+    readonly programs: readonly Address[];
+  }> | null;
 }
 
 /**
@@ -90,6 +127,6 @@ export interface RpcClient {
   /** `sigVerify` is fixed to `false`; this project never verifies signatures via simulation. */
   simulateTransaction(
     transactionBase64: string,
-    options?: RpcReadOptions & { readonly replaceRecentBlockhash?: boolean },
+    options?: SimulateOptions,
   ): Promise<SimulateResult>;
 }

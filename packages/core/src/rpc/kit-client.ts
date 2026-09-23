@@ -18,6 +18,7 @@ import type {
   RpcClient,
   RpcReadOptions,
   SignatureInfo,
+  SimulateOptions,
   SimulateResult,
   TransactionResult,
 } from "./types.js";
@@ -177,24 +178,41 @@ export class KitRpcClient implements RpcClient {
 
   async simulateTransaction(
     transactionBase64: string,
-    options?: RpcReadOptions & { readonly replaceRecentBlockhash?: boolean },
+    options?: SimulateOptions,
   ): Promise<SimulateResult> {
-    const response = await this.#send(() =>
-      this.#rpc
-        .simulateTransaction(transactionBase64 as Base64EncodedWireTransaction, {
-          commitment: options?.commitment ?? "confirmed",
-          encoding: "base64",
-          sigVerify: false,
-          ...optional("minContextSlot", options?.minContextSlot),
-          ...optional("replaceRecentBlockhash", options?.replaceRecentBlockhash),
-        })
-        .send({ abortSignal: this.#timeoutSignal() }),
-    );
-    return {
-      err: response.value.err,
-      logs: response.value.logs,
-      unitsConsumed: response.value.unitsConsumed ?? null,
+    const wire = transactionBase64 as Base64EncodedWireTransaction;
+    const base = {
+      accounts: { addresses: [...(options?.accounts ?? [])], encoding: "base64" as const },
+      commitment: options?.commitment ?? "confirmed",
+      encoding: "base64" as const,
+      sigVerify: false as const,
+      ...optional("minContextSlot", options?.minContextSlot),
     };
+    const response = await this.#send(() =>
+      options?.replaceRecentBlockhash === true
+        ? options.innerInstructions === true
+          ? this.#rpc
+              .simulateTransaction(wire, {
+                ...base,
+                innerInstructions: true,
+                replaceRecentBlockhash: true,
+              })
+              .send({ abortSignal: this.#timeoutSignal() })
+          : this.#rpc
+              .simulateTransaction(wire, { ...base, replaceRecentBlockhash: true })
+              .send({ abortSignal: this.#timeoutSignal() })
+        : this.#rpc
+            .simulateTransaction(wire, {
+              ...base,
+              innerInstructions: options?.innerInstructions === true,
+            })
+            .send({ abortSignal: this.#timeoutSignal() }),
+    );
+    return simulateResultFromKit(
+      response.context.slot,
+      response.value as unknown as KitSimulateValue,
+      options?.accounts !== undefined,
+    );
   }
 
   #send<T>(fn: () => Promise<T>): Promise<T> {
@@ -221,6 +239,124 @@ export class KitRpcClient implements RpcClient {
   #timeoutSignal(): AbortSignal {
     return AbortSignal.timeout(this.#timeoutMs);
   }
+}
+
+/**
+ * The fields of kit's `simulateTransaction` response this client reads. The RPC is untrusted input:
+ * every optional field is checked before use, and anything malformed is reported as absent.
+ */
+interface KitSimulateValue {
+  readonly err: unknown;
+  readonly logs: readonly string[] | null;
+  readonly unitsConsumed?: bigint;
+  readonly fee?: bigint | null;
+  readonly accounts?: ReadonlyArray<KitAccount | null> | null;
+  readonly preBalances?: readonly bigint[] | null;
+  readonly postBalances?: readonly bigint[] | null;
+  readonly preTokenBalances?: readonly KitTokenBalance[] | null;
+  readonly postTokenBalances?: readonly KitTokenBalance[] | null;
+  readonly loadedAddresses?: {
+    readonly writable: readonly Address[];
+    readonly readonly: readonly Address[];
+  } | null;
+  readonly innerInstructions?: ReadonlyArray<{
+    readonly index: number;
+    readonly instructions: ReadonlyArray<{
+      readonly programId?: Address;
+      readonly programIdIndex?: number;
+    }>;
+  }> | null;
+}
+
+interface KitAccount {
+  readonly owner: Address;
+  readonly lamports: bigint;
+  readonly data: readonly [string, string];
+  readonly executable: boolean;
+  readonly space: bigint;
+}
+
+interface KitTokenBalance {
+  readonly accountIndex: number;
+  readonly mint: Address;
+  readonly owner?: Address;
+  readonly uiTokenAmount: { readonly amount: string; readonly decimals: number };
+}
+
+function simulateResultFromKit(
+  contextSlot: bigint,
+  value: KitSimulateValue,
+  accountsRequested: boolean,
+): SimulateResult {
+  return {
+    accounts:
+      accountsRequested && Array.isArray(value.accounts)
+        ? value.accounts.map((account) => (account === null ? null : accountInfoFromKit(account)))
+        : null,
+    contextSlot,
+    err: value.err ?? null,
+    fee: typeof value.fee === "bigint" ? value.fee : null,
+    innerInstructionPrograms: innerProgramsFromKit(value),
+    loadedAddresses: value.loadedAddresses ?? null,
+    logs: value.logs ?? null,
+    postBalances: bigintList(value.postBalances),
+    postTokenBalances: tokenBalancesFromKit(value.postTokenBalances),
+    preBalances: bigintList(value.preBalances),
+    preTokenBalances: tokenBalancesFromKit(value.preTokenBalances),
+    unitsConsumed: value.unitsConsumed ?? null,
+  };
+}
+
+function bigintList(list: readonly bigint[] | null | undefined): readonly bigint[] | null {
+  return Array.isArray(list) && list.every((item) => typeof item === "bigint") ? list : null;
+}
+
+function tokenBalancesFromKit(
+  list: readonly KitTokenBalance[] | null | undefined,
+): SimulateResult["preTokenBalances"] {
+  if (!Array.isArray(list)) {
+    return null;
+  }
+  const out = [];
+  for (const entry of list) {
+    const amount = entry.uiTokenAmount.amount;
+    if (!/^[0-9]{1,20}$/.test(amount)) {
+      return null;
+    }
+    out.push({
+      accountIndex: entry.accountIndex,
+      amount: BigInt(amount),
+      decimals: entry.uiTokenAmount.decimals,
+      mint: entry.mint,
+      owner: entry.owner ?? null,
+    });
+  }
+  return out;
+}
+
+/**
+ * Agave builds simulation inner instructions with `parse_ui_inner_instructions`, which always
+ * yields `jsonParsed` entries (parsed, or partially decoded) carrying a `programId`
+ * (agave `rpc/src/rpc.rs` at e3fdd18f). Only program ids are kept. If an entry has no
+ * `programId` the endpoint answered in another shape, and the whole list is treated as unavailable
+ * rather than partially trusted.
+ */
+function innerProgramsFromKit(value: KitSimulateValue): SimulateResult["innerInstructionPrograms"] {
+  if (!Array.isArray(value.innerInstructions)) {
+    return null;
+  }
+  const out: { index: number; programs: Address[] }[] = [];
+  for (const group of value.innerInstructions) {
+    const programs: Address[] = [];
+    for (const instruction of group.instructions) {
+      if (typeof instruction.programId !== "string") {
+        return null;
+      }
+      programs.push(instruction.programId);
+    }
+    out.push({ index: group.index, programs });
+  }
+  return out;
 }
 
 function accountInfoFromKit(account: {

@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
+import { gunzipSync } from "node:zlib";
 import type { Address, Signature } from "@solana/kit";
-import type { FixtureData } from "./fixture-client.js";
-import type { AccountInfo, TransactionResult } from "./types.js";
+import type { FixtureData, RecordedSimulation } from "./fixture-client.js";
+import type { AccountInfo, RpcTokenBalance, SimulateResult, TransactionResult } from "./types.js";
 
 /**
  * On-disk shape written by `scripts/capture-fixture.ts` and read by `loadFixtureFile`. `bigint`
@@ -15,6 +16,47 @@ export interface FixtureFile {
   readonly genesisHash?: string;
   readonly accounts?: Readonly<Record<string, FixtureAccountRecord>>;
   readonly transactions?: Readonly<Record<string, FixtureTransactionRecord>>;
+  /** Keyed by the exact base64 wire transaction simulated. */
+  readonly simulations?: Readonly<Record<string, FixtureSimulationRecord>>;
+}
+
+export interface FixtureTokenBalanceRecord {
+  readonly accountIndex: number;
+  readonly mint: string;
+  readonly owner: string | null;
+  readonly amount: string;
+  readonly decimals: number;
+}
+
+export interface FixtureSimulationResultRecord {
+  readonly contextSlot: string;
+  readonly err: unknown | null;
+  readonly logs: readonly string[] | null;
+  readonly unitsConsumed: string | null;
+  readonly fee: string | null;
+  readonly accounts: ReadonlyArray<FixtureAccountRecord | null> | null;
+  readonly preBalances: readonly string[] | null;
+  readonly postBalances: readonly string[] | null;
+  readonly preTokenBalances: readonly FixtureTokenBalanceRecord[] | null;
+  readonly postTokenBalances: readonly FixtureTokenBalanceRecord[] | null;
+  readonly loadedAddresses: {
+    readonly writable: readonly string[];
+    readonly readonly: readonly string[];
+  } | null;
+  readonly innerInstructionPrograms: ReadonlyArray<{
+    readonly index: number;
+    readonly programs: readonly string[];
+  }> | null;
+}
+
+export interface FixtureSimulationRecord {
+  readonly request: {
+    readonly accounts: readonly string[];
+    readonly innerInstructions: boolean;
+    readonly replaceRecentBlockhash: boolean;
+  };
+  readonly result?: FixtureSimulationResultRecord;
+  readonly rpcError?: { readonly code: number; readonly message: string };
 }
 
 export interface FixtureAccountRecord {
@@ -36,9 +78,13 @@ export interface FixtureTransactionRecord {
   };
 }
 
-/** Reads and parses one fixture JSON file into `FixtureData`, ready for `FixtureRpcClient`. */
+/**
+ * Reads and parses one fixture JSON file into `FixtureData`, ready for `FixtureRpcClient`. A path
+ * ending in `.gz` is gunzipped first (fixtures holding whole program binaries are stored that way).
+ */
 export async function loadFixtureFile(path: string): Promise<FixtureData> {
-  const raw = await readFile(path, "utf8");
+  const bytes = await readFile(path);
+  const raw = (path.endsWith(".gz") ? gunzipSync(bytes) : bytes).toString("utf8");
   const file = JSON.parse(raw) as FixtureFile;
   return fixtureDataFromFile(file);
 }
@@ -48,9 +94,13 @@ export async function loadFixtureFiles(paths: readonly string[]): Promise<Fixtur
   const parts = await Promise.all(paths.map((path) => loadFixtureFile(path)));
   const accounts = new Map<Address, AccountInfo>();
   const transactions = new Map<Signature, TransactionResult>();
+  const simulations = new Map<string, RecordedSimulation>();
   let contextSlot = 0n;
   let genesisHash: string | undefined;
   for (const part of parts) {
+    for (const [transaction, simulation] of part.simulations ?? []) {
+      simulations.set(transaction, simulation);
+    }
     for (const [address, info] of part.accounts) {
       accounts.set(address, info);
     }
@@ -65,21 +115,92 @@ export async function loadFixtureFiles(paths: readonly string[]): Promise<Fixtur
   return {
     accounts,
     contextSlot,
+    simulations,
     transactions,
     ...(genesisHash === undefined ? {} : { genesisHash }),
   };
 }
 
+function accountFromRecord(record: FixtureAccountRecord): AccountInfo {
+  return {
+    dataBase64: record.dataBase64,
+    executable: record.executable,
+    lamports: BigInt(record.lamports),
+    owner: record.owner as Address,
+    space: BigInt(record.space),
+  };
+}
+
+function tokenBalancesFromRecord(
+  records: readonly FixtureTokenBalanceRecord[] | null,
+): readonly RpcTokenBalance[] | null {
+  return records === null
+    ? null
+    : records.map((record) => ({
+        accountIndex: record.accountIndex,
+        amount: BigInt(record.amount),
+        decimals: record.decimals,
+        mint: record.mint as Address,
+        owner: record.owner as Address | null,
+      }));
+}
+
+function simulationResultFromRecord(record: FixtureSimulationResultRecord): SimulateResult {
+  const bigints = (list: readonly string[] | null) => (list === null ? null : list.map(BigInt));
+  return {
+    accounts:
+      record.accounts === null
+        ? null
+        : record.accounts.map((account) => (account === null ? null : accountFromRecord(account))),
+    contextSlot: BigInt(record.contextSlot),
+    err: record.err,
+    fee: record.fee === null ? null : BigInt(record.fee),
+    innerInstructionPrograms:
+      record.innerInstructionPrograms === null
+        ? null
+        : record.innerInstructionPrograms.map((group) => ({
+            index: group.index,
+            programs: group.programs as Address[],
+          })),
+    loadedAddresses:
+      record.loadedAddresses === null
+        ? null
+        : {
+            readonly: record.loadedAddresses.readonly as Address[],
+            writable: record.loadedAddresses.writable as Address[],
+          },
+    logs: record.logs,
+    postBalances: bigints(record.postBalances),
+    postTokenBalances: tokenBalancesFromRecord(record.postTokenBalances),
+    preBalances: bigints(record.preBalances),
+    preTokenBalances: tokenBalancesFromRecord(record.preTokenBalances),
+    unitsConsumed: record.unitsConsumed === null ? null : BigInt(record.unitsConsumed),
+  };
+}
+
+function simulationFromRecord(record: FixtureSimulationRecord): RecordedSimulation {
+  const request = {
+    accounts: record.request.accounts as Address[],
+    innerInstructions: record.request.innerInstructions,
+    replaceRecentBlockhash: record.request.replaceRecentBlockhash,
+  };
+  if (record.result !== undefined) {
+    return { request, result: simulationResultFromRecord(record.result) };
+  }
+  if (record.rpcError !== undefined) {
+    return { request, rpcError: record.rpcError };
+  }
+  throw new Error("fixture simulation record has neither `result` nor `rpcError`");
+}
+
 function fixtureDataFromFile(file: FixtureFile): FixtureData {
   const accounts = new Map<Address, AccountInfo>();
   for (const [address, record] of Object.entries(file.accounts ?? {})) {
-    accounts.set(address as Address, {
-      dataBase64: record.dataBase64,
-      executable: record.executable,
-      lamports: BigInt(record.lamports),
-      owner: record.owner as Address,
-      space: BigInt(record.space),
-    });
+    accounts.set(address as Address, accountFromRecord(record));
+  }
+  const simulations = new Map<string, RecordedSimulation>();
+  for (const [transaction, record] of Object.entries(file.simulations ?? {})) {
+    simulations.set(transaction, simulationFromRecord(record));
   }
   const transactions = new Map<Signature, TransactionResult>();
   for (const [signature, record] of Object.entries(file.transactions ?? {})) {
@@ -97,6 +218,7 @@ function fixtureDataFromFile(file: FixtureFile): FixtureData {
   return {
     accounts,
     contextSlot: BigInt(file.contextSlot),
+    simulations,
     transactions,
     ...(file.genesisHash === undefined ? {} : { genesisHash: file.genesisHash }),
   };

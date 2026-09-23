@@ -1,4 +1,4 @@
-import type { Address, Signature } from "@solana/kit";
+import { type Address, type Signature, SolanaError } from "@solana/kit";
 import type { AnalysisGap } from "../report.js";
 import type {
   AccountInfo,
@@ -6,6 +6,7 @@ import type {
   RpcClient,
   RpcReadOptions,
   SignatureInfo,
+  SimulateOptions,
   SimulateResult,
   TransactionResult,
 } from "./types.js";
@@ -17,12 +18,29 @@ export class FixtureNotSupportedError extends Error {
   }
 }
 
+/** The request a recorded simulation was made with; a replay must ask exactly the same. */
+export interface RecordedSimulationRequest {
+  readonly accounts: readonly Address[];
+  readonly innerInstructions: boolean;
+  readonly replaceRecentBlockhash: boolean;
+}
+
+/** A real `simulateTransaction` exchange: the endpoint's answer, or the JSON-RPC error it returned. */
+export type RecordedSimulation = {
+  readonly request: RecordedSimulationRequest;
+} & (
+  | { readonly result: SimulateResult }
+  | { readonly rpcError: { readonly code: number; readonly message: string } }
+);
+
 export interface FixtureData {
   /** The slot recorded at capture time; used as the context slot for any lookup. */
   readonly contextSlot: bigint;
   readonly accounts: ReadonlyMap<Address, AccountInfo>;
   readonly transactions: ReadonlyMap<Signature, TransactionResult>;
   readonly genesisHash?: string;
+  /** Recorded simulations, keyed by the exact base64 wire transaction that was simulated. */
+  readonly simulations?: ReadonlyMap<string, RecordedSimulation>;
 }
 
 /**
@@ -87,10 +105,37 @@ export class FixtureRpcClient implements RpcClient {
     return [];
   }
 
+  /**
+   * Replays a recorded simulation of exactly this transaction with exactly these options. A JSON-RPC
+   * error the endpoint returned is re-thrown as the same kit `SolanaError` a live client throws.
+   */
   simulateTransaction(
-    _transactionBase64: string,
-    _options?: RpcReadOptions & { readonly replaceRecentBlockhash?: boolean },
+    transactionBase64: string,
+    options?: SimulateOptions,
   ): Promise<SimulateResult> {
-    throw new FixtureNotSupportedError("simulateTransaction");
+    const recorded = this.#data.simulations?.get(transactionBase64);
+    if (recorded === undefined) {
+      throw new FixtureNotSupportedError("simulateTransaction (no recording of this transaction)");
+    }
+    const request: RecordedSimulationRequest = {
+      accounts: options?.accounts ?? [],
+      innerInstructions: options?.innerInstructions === true,
+      replaceRecentBlockhash: options?.replaceRecentBlockhash === true,
+    };
+    if (JSON.stringify(request) !== JSON.stringify(recorded.request)) {
+      throw new FixtureNotSupportedError(
+        "simulateTransaction (recorded with different options than requested)",
+      );
+    }
+    if ("rpcError" in recorded) {
+      // Every JSON-RPC server error kit raises carries `__serverMessage`; the literal type only
+      // selects that context shape (the recorded code itself is whatever the endpoint returned).
+      return Promise.reject(
+        new SolanaError(recorded.rpcError.code as -32602, {
+          __serverMessage: recorded.rpcError.message,
+        }),
+      );
+    }
+    return Promise.resolve(recorded.result);
   }
 }

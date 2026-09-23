@@ -1,6 +1,10 @@
 export { chunk, mapWithConcurrency } from "./batch.js";
 export { detectCluster } from "./cluster.js";
-export type { FixtureData } from "./fixture-client.js";
+export type {
+  FixtureData,
+  RecordedSimulation,
+  RecordedSimulationRequest,
+} from "./fixture-client.js";
 export { FixtureNotSupportedError, FixtureRpcClient } from "./fixture-client.js";
 export type {
   FixtureAccountRecord,
@@ -21,7 +25,9 @@ export type {
   LoadedAddresses,
   RpcClient,
   RpcReadOptions,
+  RpcTokenBalance,
   SignatureInfo,
+  SimulateOptions,
   SimulateResult,
   TransactionResult,
 } from "./types.js";
