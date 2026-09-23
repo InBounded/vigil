@@ -41,7 +41,8 @@ export interface ProgramDecodeResult {
 }
 
 export interface ProgramDecoder {
-  readonly kind: Extract<DecoderKind, "native" | "squads">;
+  /** `anchor-idl` / `program-metadata-idl` decoders are built at runtime from a program's IDL. */
+  readonly kind: Exclude<DecoderKind, "none">;
   /** Stable short key used to build i18n summary keys: `ix.<key>.<instructionName>`. */
   readonly key: string;
   readonly programIds: readonly Address[];

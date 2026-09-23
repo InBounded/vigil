@@ -1,5 +1,5 @@
 export { toHex } from "./bytes.js";
-export type { DecodeContext, MessageDecodeResult } from "./decode.js";
+export type { DecodeContext, DecodeOptions, MessageDecodeResult } from "./decode.js";
 export {
   createDecodeContext,
   decodeCompiledMessage,

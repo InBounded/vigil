@@ -1,6 +1,10 @@
 import type { RpcClient } from "../rpc/types.js";
 import type { VaultTransactionMessage } from "../squads/generated/types/vaultTransactionMessage.js";
-import { decodeMessageWithLookups, type MessageDecodeResult } from "./decode.js";
+import {
+  type DecodeOptions,
+  decodeMessageWithLookups,
+  type MessageDecodeResult,
+} from "./decode.js";
 import { fromVaultTransactionMessage } from "./message.js";
 
 /**
@@ -10,6 +14,7 @@ import { fromVaultTransactionMessage } from "./message.js";
 export function decodeVaultTransactionMessage(
   rpc: RpcClient,
   message: VaultTransactionMessage,
+  options: DecodeOptions = {},
 ): Promise<MessageDecodeResult> {
-  return decodeMessageWithLookups(rpc, fromVaultTransactionMessage(message));
+  return decodeMessageWithLookups(rpc, fromVaultTransactionMessage(message), options);
 }

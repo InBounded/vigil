@@ -4,6 +4,8 @@ import {
   SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_INSTRUCTION,
   SOLANA_ERROR__PROGRAM_CLIENTS__UNRECOGNIZED_INSTRUCTION_TYPE,
 } from "@solana/kit";
+import { type IdlEntry, type IdlOptions, loadProgramIdls } from "../idl/fetch.js";
+import { findRegistryProgram } from "../registry/index.js";
 import type {
   AnalysisGap,
   AnalysisGapCode,
@@ -63,7 +65,19 @@ export interface DecodeContext {
   readonly tables: ReadonlyMap<Address, LookupTableEntry>;
   /** Filled during decoding with tables that were needed but not yet fetched. */
   readonly missing: Set<Address>;
+  /**
+   * IDLs looked up so far, for programs without a built-in decoder; `undefined` = IDL lookup is
+   * disabled. A program absent from the map has not been looked up yet.
+   */
+  readonly idls: ReadonlyMap<Address, IdlEntry> | undefined;
+  /** Filled during decoding with programs whose IDL was needed but not yet looked up. */
+  readonly missingIdls: Set<Address>;
   readonly gaps: AnalysisGap[];
+}
+
+export interface DecodeOptions {
+  /** Look up third-party programs' IDLs on chain (default), or `false` to never do so. */
+  readonly idl?: IdlOptions | false;
 }
 
 export interface MessageDecodeResult {
@@ -77,25 +91,29 @@ export interface MessageDecodeResult {
 
 export function createDecodeContext(
   tables: ReadonlyMap<Address, LookupTableEntry> = new Map(),
+  idls?: ReadonlyMap<Address, IdlEntry>,
 ): DecodeContext {
-  return { gaps: [], missing: new Set(), tables };
+  return { gaps: [], idls, missing: new Set(), missingIdls: new Set(), tables };
 }
 
 /**
  * Decodes every instruction of a message, fetching whatever lookup tables it (or any message
- * embedded in it) needs. Decoding is pure; each round only adds tables discovered in the previous
- * one, so the number of rounds is bounded by the embedding depth.
+ * embedded in it) needs, and the IDLs of programs Vigil has no built-in decoder for. Decoding is
+ * pure; each round only adds tables or IDLs discovered in the previous one, so the number of rounds
+ * is bounded by the embedding depth.
  */
 export async function decodeMessageWithLookups(
   rpc: RpcClient,
   message: CompiledMessage,
+  options: DecodeOptions = {},
 ): Promise<MessageDecodeResult> {
   const tables = new Map<Address, LookupTableEntry>();
+  const idls = options.idl === false ? undefined : new Map<Address, IdlEntry>();
   let contextSlot: bigint | null = null;
-  for (let round = 0; round <= MAX_EMBEDDED_DEPTH + 1; round++) {
-    const context = createDecodeContext(tables);
+  for (let round = 0; round <= 2 * (MAX_EMBEDDED_DEPTH + 2); round++) {
+    const context = createDecodeContext(tables, idls);
     const instructions = decodeCompiledMessage(message, context, 0, undefined);
-    if (context.missing.size === 0) {
+    if (context.missing.size === 0 && context.missingIdls.size === 0) {
       return {
         gaps: dedupeGaps(context.gaps),
         instructions,
@@ -105,16 +123,28 @@ export async function decodeMessageWithLookups(
         lookupTablesContextSlot: contextSlot,
       };
     }
-    const fetched = await fetchLookupTables(rpc, [...context.missing].sort());
-    for (const [address, entry] of fetched.entries) {
-      tables.set(address, entry);
-    }
-    if (contextSlot === null || fetched.contextSlot > contextSlot) {
-      contextSlot = fetched.contextSlot;
+    if (context.missing.size > 0) {
+      const fetched = await fetchLookupTables(rpc, [...context.missing].sort());
+      for (const [address, entry] of fetched.entries) {
+        tables.set(address, entry);
+      }
+      if (contextSlot === null || fetched.contextSlot > contextSlot) {
+        contextSlot = fetched.contextSlot;
+      }
+    } else if (idls !== undefined) {
+      // IDLs are looked up once every lookup table is resolved, so all program ids are known.
+      const loaded = await loadProgramIdls(
+        rpc,
+        [...context.missingIdls].sort(),
+        options.idl === false ? {} : options.idl,
+      );
+      for (const [program, entry] of loaded) {
+        idls.set(program, entry);
+      }
     }
   }
-  // Unreachable in practice: every round either finishes or fetches new tables, and new tables can
-  // only come from a deeper embedding level, which is capped.
+  // Unreachable in practice: every round either finishes or fetches new tables/IDLs, and new ones
+  // can only come from a deeper embedding level, which is capped.
   throw new DecodeError("INVALID_VALUE", "lookup table resolution did not converge");
 }
 
@@ -198,17 +228,12 @@ export function decodeInstruction(
   depth: number,
   topIndex: number,
 ): DecodedInstruction {
-  const decoder = REGISTRY.get(instruction.programId);
+  const decoder = REGISTRY.get(instruction.programId) ?? idlDecoder(instruction, context, topIndex);
   if (decoder === undefined) {
-    addGap(
-      context,
-      "UNKNOWN_PROGRAM",
-      "no decoder for this program",
-      topIndex,
-      instruction.programId,
-    );
     return undecoded(index, instruction.programId, instruction.accounts, instruction.data);
   }
+  const fromIdl = decoder.kind === "anchor-idl" || decoder.kind === "program-metadata-idl";
+  const programLabel = fromIdl ? findRegistryProgram(instruction.programId)?.name : decoder.label;
 
   let result: ProgramDecodeResult;
   try {
@@ -224,7 +249,7 @@ export function decodeInstruction(
     );
     return {
       ...undecoded(index, instruction.programId, instruction.accounts, instruction.data),
-      programLabel: decoder.label,
+      ...(programLabel === undefined ? {} : { programLabel }),
     };
   }
 
@@ -260,12 +285,44 @@ export function decodeInstruction(
     ...(inner === undefined ? {} : { inner }),
     name: result.name,
     programId: instruction.programId,
-    programLabel: decoder.label,
-    provenance: "onchain",
+    ...(programLabel === undefined ? {} : { programLabel }),
+    provenance: fromIdl ? "idl-declared" : "onchain",
     rawDataHex: toHex(instruction.data),
     ...(notes.length === 0 ? {} : { sanitizer: notes }),
     summary: result.summary ?? buildSummary(decoder.key, result.name, args, accounts),
   };
+}
+
+/**
+ * The IDL-driven decoder for a program Vigil has no built-in decoder for, or `undefined` after
+ * recording why the instruction cannot be decoded (no IDL, IDL unusable, IDL not looked up yet).
+ */
+function idlDecoder(
+  instruction: InstructionInput,
+  context: DecodeContext,
+  topIndex: number,
+): ProgramDecoder | undefined {
+  const entry = context.idls?.get(instruction.programId);
+  if (entry?.status === "ok") {
+    return entry.decoder;
+  }
+  if (entry?.status === "error") {
+    addGap(context, entry.code, entry.message, topIndex, instruction.programId);
+    return undefined;
+  }
+  if (entry === undefined && context.idls !== undefined) {
+    context.missingIdls.add(instruction.programId);
+  }
+  addGap(
+    context,
+    "UNKNOWN_PROGRAM",
+    entry === undefined
+      ? "no decoder for this program"
+      : "no decoder for this program, and it publishes no IDL on chain",
+    topIndex,
+    instruction.programId,
+  );
+  return undefined;
 }
 
 function decodeNested(

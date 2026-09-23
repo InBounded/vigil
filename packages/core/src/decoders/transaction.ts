@@ -11,7 +11,11 @@ import {
 } from "@solana/kit";
 import type { RpcClient } from "../rpc/types.js";
 import { toHex } from "./bytes.js";
-import { decodeMessageWithLookups, type MessageDecodeResult } from "./decode.js";
+import {
+  type DecodeOptions,
+  decodeMessageWithLookups,
+  type MessageDecodeResult,
+} from "./decode.js";
 import { DecodeError } from "./errors.js";
 import type { CompiledInstructionRef, CompiledMessage } from "./message.js";
 
@@ -53,11 +57,12 @@ const BASE64_PATTERN = /^[A-Za-z0-9+/]*={0,2}$/;
 export async function decodeRawTransaction(
   rpc: RpcClient,
   base64: string,
+  options: DecodeOptions = {},
 ): Promise<RawTransactionDecodeResult> {
   const bytes = parseBase64(base64);
   const { message, signatureCount } = parseWireTransaction(bytes);
   const [decoded, sha256] = await Promise.all([
-    decodeMessageWithLookups(rpc, message.compiled),
+    decodeMessageWithLookups(rpc, message.compiled, options),
     sha256Hex(bytes),
   ]);
   return {

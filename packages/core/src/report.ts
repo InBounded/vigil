@@ -72,7 +72,11 @@ export type AnalysisGapCode =
   | "EMBEDDED_MESSAGE_INVALID"
   | "EMBEDDED_MESSAGE_IN_BUFFER"
   | "RPC_TRANSACTION_VERSION_UNSUPPORTED"
-  | "TOKEN_DECIMALS_UNKNOWN";
+  | "TOKEN_DECIMALS_UNKNOWN"
+  | "IDL_FETCH_FAILED"
+  | "IDL_INVALID"
+  | "IDL_AT_URL"
+  | "IDL_UNSUPPORTED";
 
 /**
  * Something the analysis could not establish. Any gap makes the report incomplete, which must
