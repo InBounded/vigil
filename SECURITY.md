@@ -8,7 +8,7 @@ Please report vulnerabilities privately through **GitHub Private Vulnerability R
 
 1. Go to the repository's **Security** tab.
 2. Select **Report a vulnerability**.
-3. Describe the issue, including reproduction steps, affected package (`@vigil/core`, `@vigil/cli`, `@vigil/web`, `@vigil/rpc-proxy`), and potential impact.
+3. Describe the issue, including reproduction steps, affected package (`@vigil-sol/core`, `@vigil-sol/cli`, `@vigil/web`, `@vigil/rpc-proxy`), and potential impact.
 
 Do not open a public GitHub issue for a suspected vulnerability.
 

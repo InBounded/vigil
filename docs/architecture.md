@@ -6,7 +6,7 @@ This document is a skeleton, filled in as each phase lands. It records what's ac
 
 ```
 apps/web        ──┐
-apps/cli (bin)  ──┼──>  packages/core  ──>  packages/core/report.ts (AnalysisReport — decoding types only so far)
+packages/cli     ──┼──>  packages/core  ──>  packages/core/report.ts (AnalysisReport)
 apps/rpc-proxy  ──┘         │
                              ├── rpc/        (RpcClient, injected — built: KitRpcClient + FixtureRpcClient)
                              ├── squads/     (MultisigAdapter, Squads v4 — built: SquadsV4Adapter)
@@ -16,7 +16,7 @@ apps/rpc-proxy  ──┘         │
 ```
 
 - **`packages/core`** is the isomorphic analysis engine. It performs no I/O directly: all reads go through injected `RpcClient`, `HttpClient`, and `Clock` interfaces (see `AGENTS.md` → Coding standards), which is what makes it runnable in both the browser and Node, and testable offline against fixtures.
-- **`packages/cli`** and **`apps/web`** are presentation layers only. They call `@vigil/core` and render its `AnalysisReport`; they do not contain decoding or risk logic themselves.
+- **`packages/cli`** and **`apps/web`** are presentation layers only. They call `@vigil-sol/core` and render its `AnalysisReport`; they do not contain decoding or risk logic themselves.
 - **`apps/rpc-proxy`** is an optional Cloudflare Workers component that forwards only allowlisted RPC methods (see `docs/reference.md` §4). Nothing depends on it existing — both the web app and the CLI can talk to any RPC endpoint directly.
 
 ## Data flow (target, once later phases land)
@@ -49,8 +49,13 @@ apps/rpc-proxy  ──┘         │
   - `packages/core/src/report.ts`: `Finding`, `Severity`, `Verdict`, and the rule inputs Phase 5 fills (`ProgramInfo`, `SimulationResult`, `ConfigAction`).
   - `packages/core/src/i18n/render.ts`: `renderFinding` (en, pt-PT).
   - Not yet built: gathering the facts the rules read (balances, history, program/buffer accounts, verification, simulation), report assembly, both UIs.
-- **Phase 5+:** to be documented here as they land.
+- **Phase 5:** simulation, program information, RPC cross-check (gatherers only; see `docs/DECISIONS.md`).
+- **Phase 6 (CLI):**
+  - `packages/core/src/analyze/`: report assembly (`analyzeProposal`, `analyzeRawTransaction`) over every gatherer, plus the transfer-balance (VGL-W004) and vault-history (VGL-W005) gatherers; `serializeReport` (deterministic JSON) and `docs/report.schema.json`.
+  - `packages/cli` (`@vigil-sol/cli`, command `vigil`): `decode`, `list`, `verify`, `rules`, `explain` (`watch` in Phase 8). `main(argv, environment)` with everything external injected; human output (verdict first, full addresses, framed snapshot note) or `--json`; exit codes 0–4; secrets only from environment variables, every output redacted.
+  - `.github/workflows/release.yml`: npm publishing with provenance on `v*` tags (first used in Phase 10).
+- **Phase 7+:** to be documented here as they land.
 
 ## Central contract
 
-The `AnalysisReport` type (and its sub-types `DecodedInstruction`, `Finding`, `Severity`, `Provenance`, `Verdict`) is defined in full in `AGENTS.md` under "Central contract: AnalysisReport" and will live at `packages/core/src/report.ts` once written. This document does not repeat that definition — treat `AGENTS.md` as the source of truth for it and record any deviation here and in `docs/DECISIONS.md` when it's actually implemented.
+The `AnalysisReport` type (and its sub-types `DecodedInstruction`, `Finding`, `Severity`, `Provenance`, `Verdict`) is defined in full in `AGENTS.md` under "Central contract: AnalysisReport" and lives at `packages/core/src/report.ts`. This document does not repeat that definition — treat `AGENTS.md` as the source of truth for it and record any deviation here and in `docs/DECISIONS.md` when it's actually implemented.
