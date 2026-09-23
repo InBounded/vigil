@@ -20,7 +20,10 @@ export async function annotateInstructions(
   context: LabelContext,
 ): Promise<AnnotationResult> {
   const enriched = await enrichTokenAmounts(rpc, instructions, context.cluster);
-  const labels = await buildLabels(context);
+  const tokenAccountOwners = new Map(
+    [...enriched.tokenAccounts].map(([address, info]) => [address, info.owner] as const),
+  );
+  const labels = await buildLabels({ ...context, tokenAccountOwners });
   return {
     gaps: enriched.gaps,
     instructions: applyLabels(enriched.instructions, labels, context.cluster),

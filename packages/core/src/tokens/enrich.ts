@@ -13,6 +13,7 @@ import {
   parseTokenAccount,
   type RawAccount,
   type RawDeclaredMetadata,
+  type TokenAccountInfo,
 } from "./accounts.js";
 
 /** What Vigil knows about a mint used by the analysed instructions. */
@@ -36,6 +37,8 @@ export interface TokenInfo {
 
 export interface TokenEnrichment {
   readonly instructions: DecodedInstruction[];
+  /** Token accounts read along the way (source/destination of amounts), by address. */
+  readonly tokenAccounts: ReadonlyMap<Address, TokenAccountInfo>;
   /** Sorted by mint address. */
   readonly tokens: TokenInfo[];
   readonly gaps: AnalysisGap[];
@@ -57,6 +60,14 @@ const AMOUNT_INSTRUCTIONS: Readonly<Record<string, "mint" | "source">> = {
   transferChecked: "mint",
 };
 
+/** Token-account roles of amount instructions, read to learn their mint and owner. */
+const TOKEN_ACCOUNT_ROLES: ReadonlySet<string> = new Set([
+  "source",
+  "destination",
+  "account",
+  "token",
+]);
+
 const TOKEN_PROGRAMS: ReadonlySet<Address> = new Set([
   TOKEN_PROGRAM_ADDRESS,
   TOKEN_2022_PROGRAM_ADDRESS,
@@ -66,6 +77,8 @@ const base64Bytes = getBase64Encoder();
 
 interface Pending {
   readonly instruction: DecodedInstruction;
+  /** Addresses in token-account roles of this instruction. */
+  readonly tokenAccounts: readonly Address[];
   readonly topIndex: number;
   readonly via: "mint" | "source";
   readonly address: Address;
@@ -86,19 +99,22 @@ export async function enrichTokenAmounts(
   const pending: Pending[] = [];
   collect(instructions, undefined, pending);
   const gaps: AnalysisGap[] = [];
+  const tokenAccounts = new Map<Address, TokenAccountInfo>();
   if (pending.length === 0) {
-    return { gaps, instructions: [...instructions], tokens: [] };
+    return { gaps, instructions: [...instructions], tokenAccounts, tokens: [] };
   }
 
   let failure: string | null = null;
-  const sourceMints = new Map<Address, Address | null>();
-  const sources = unique(pending.filter((p) => p.via === "source").map((p) => p.address));
-  if (sources.length > 0) {
+  const toRead = unique(pending.flatMap((p) => p.tokenAccounts));
+  if (toRead.length > 0) {
     try {
-      const accounts = await readAccounts(rpc, sources);
-      for (const source of sources) {
-        const raw = accounts.get(source);
-        sourceMints.set(source, raw === undefined ? null : (parseTokenAccount(raw)?.mint ?? null));
+      const accounts = await readAccounts(rpc, toRead);
+      for (const address of toRead) {
+        const raw = accounts.get(address);
+        const info = raw === undefined ? null : parseTokenAccount(raw);
+        if (info !== null) {
+          tokenAccounts.set(address, info);
+        }
       }
     } catch (error) {
       failure = describe(error);
@@ -106,7 +122,7 @@ export async function enrichTokenAmounts(
   }
 
   const mintOf = (p: Pending): Address | null =>
-    p.via === "mint" ? p.address : (sourceMints.get(p.address) ?? null);
+    p.via === "mint" ? p.address : (tokenAccounts.get(p.address)?.mint ?? null);
   const mints = unique(pending.map(mintOf).filter((m): m is Address => m !== null));
   const mintInfos = new Map<Address, MintInfo>();
   const metaplex = new Map<Address, RawDeclaredMetadata>();
@@ -159,12 +175,19 @@ export async function enrichTokenAmounts(
               : "the mint account could not be read, so its decimals are unknown; the amount is shown in base units",
       });
     }
-    params.set(p.instruction, tokenParams(mint, decimals, token));
+    const destination = p.instruction.accounts.find((a) => a.role === "destination");
+    const destinationOwner =
+      destination === undefined ? undefined : tokenAccounts.get(destination.address)?.owner;
+    params.set(p.instruction, {
+      ...tokenParams(mint, decimals, token),
+      ...(destinationOwner === undefined ? {} : { destinationOwner }),
+    });
   }
 
   return {
     gaps,
     instructions: rewrite(instructions, params),
+    tokenAccounts,
     tokens: [...tokens.values()].sort((a, b) => (a.mint < b.mint ? -1 : a.mint > b.mint ? 1 : 0)),
   };
 }
@@ -180,7 +203,10 @@ function collect(
     if (via !== undefined && TOKEN_PROGRAMS.has(instruction.programId)) {
       const account = instruction.accounts.find((a) => a.role === via);
       if (account !== undefined) {
-        out.push({ address: account.address, instruction, topIndex: top, via });
+        const tokenAccounts = instruction.accounts
+          .filter((a) => a.role !== undefined && TOKEN_ACCOUNT_ROLES.has(a.role))
+          .map((a) => a.address);
+        out.push({ address: account.address, instruction, tokenAccounts, topIndex: top, via });
       }
     }
     if (instruction.inner !== undefined) {

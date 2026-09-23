@@ -38,6 +38,11 @@ export interface LabelContext {
   readonly multisig?: MultisigLabelContext;
   /** Already sanitized and validated (see `parseUserLabels`). */
   readonly userLabels?: ReadonlyMap<Address, string>;
+  /**
+   * Owners of token accounts read from chain (token account → owner), so a vault's token account
+   * can be named after the vault ("from Vault #0").
+   */
+  readonly tokenAccountOwners?: ReadonlyMap<Address, Address>;
 }
 
 /**
@@ -69,6 +74,16 @@ export async function buildLabels(context: LabelContext): Promise<Map<Address, A
     }
     for (const member of multisig.members) {
       set(member, { key: "label.member", params: {}, source: "multisig" });
+    }
+    for (const [tokenAccount, owner] of context.tokenAccountOwners ?? []) {
+      const vault = labels.get(owner);
+      if (vault?.key === "label.vault") {
+        set(tokenAccount, {
+          key: "label.vaultTokenAccount",
+          params: vault.params,
+          source: "multisig",
+        });
+      }
     }
   }
   for (const [address, name] of SYSVARS) {
