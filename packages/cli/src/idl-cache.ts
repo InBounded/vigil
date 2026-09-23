@@ -3,15 +3,7 @@ import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 
-/**
- * Structurally identical to `IdlCache` in `@vigil/core` (`src/idl/fetch.ts`). Declared here rather
- * than imported because the CLI is not wired to the core package until the CLI phase; see
- * `docs/DECISIONS.md`.
- */
-export interface IdlCacheStore {
-  get(key: string): Promise<string | undefined>;
-  set(key: string, json: string): Promise<void>;
-}
+import type { IdlCache } from "@vigil-sol/core";
 
 /** `<base58 program>:<sha256 hex>`, the only key shape core produces. Anything else is refused. */
 const KEY = /^([1-9A-HJ-NP-Za-km-z]{32,44}):([0-9a-f]{64})$/;
@@ -36,7 +28,7 @@ export function defaultCacheDir(
  * IDL cache on disk: one file per key in `<cacheDir>/idl/`, written atomically (temporary file +
  * rename) and readable only by the user. Contents are still validated by core on every read.
  */
-export class FileIdlCache implements IdlCacheStore {
+export class FileIdlCache implements IdlCache {
   readonly #dir: string;
 
   constructor(cacheDir: string = defaultCacheDir()) {
