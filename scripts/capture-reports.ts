@@ -12,11 +12,14 @@
  *   --list <multisig>               list proposals (`--limit`, default 20) and analyse the active ones
  *   --proposal <multisig>:<index>   analyse a proposal (repeatable)
  *   --raw-signature <signature>     analyse a past transaction's bytes as-is against today's state
+ *   --raw-base64-file <path>        analyse the base64 transaction in a file (e.g. an unsigned one
+ *                                   built by scripts/build-hostile-memo-transaction.ts)
+ *   --out <dir>                     fixtures subdirectory to write to (default `cli`)
  *   --verify <program>              program information and verification (repeatable)
  *   --history <n>                   `historyDepth` for proposal analyses
  *   --gzip                          write the RPC fixture as `<name>.json.gz` (program binaries)
  */
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -75,6 +78,8 @@ async function main(): Promise<void> {
       list: { type: "string" },
       name: { type: "string" },
       proposal: { multiple: true, type: "string" },
+      out: { default: "cli", type: "string" },
+      "raw-base64-file": { type: "string" },
       "raw-signature": { type: "string" },
       verify: { multiple: true, type: "string" },
     },
@@ -132,6 +137,15 @@ async function main(): Promise<void> {
     );
     console.log(`base64: ${tx.transactionBase64}`);
   }
+  if (values["raw-base64-file"] !== undefined) {
+    const base64 = (await readFile(values["raw-base64-file"], "utf8")).trim();
+    const report = await analyzeRawTransaction(deps, base64, options);
+    console.log(
+      `raw ${values["raw-base64-file"]} → ${report.verdict}`,
+      report.findings.map((f) => f.ruleId).join(" "),
+      report.completeness.gaps.map((g) => g.code).join(" "),
+    );
+  }
   for (const program of values.verify ?? []) {
     const facts = await gatherProgramFacts(rpc, {
       buffers: [],
@@ -146,7 +160,15 @@ async function main(): Promise<void> {
     console.log(program, verified.programs[0]?.verification, verified.gaps);
   }
 
-  const outDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "fixtures", "cli");
+  if (!/^[a-z-]+$/.test(values.out)) {
+    throw new Error("--out must be a fixtures subdirectory name");
+  }
+  const outDir = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "fixtures",
+    values.out,
+  );
   await mkdir(outDir, { recursive: true });
   const capturedAt = new Date().toISOString();
   const fixture = {
@@ -176,7 +198,7 @@ async function main(): Promise<void> {
     )}\n`,
   );
   console.log(
-    `Wrote fixtures/cli/${values.name}.json${values.gzip === true ? ".gz" : ""} and .http.json`,
+    `Wrote fixtures/${values.out}/${values.name}.json${values.gzip === true ? ".gz" : ""} and .http.json`,
   );
 }
 
