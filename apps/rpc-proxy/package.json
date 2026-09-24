@@ -3,10 +3,24 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=22.22.2"
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json"
+    "build": "WRANGLER_SEND_METRICS=false wrangler deploy --dry-run --outdir dist",
+    "typecheck": "WRANGLER_SEND_METRICS=false wrangler types && tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "test": "WRANGLER_SEND_METRICS=false vitest run",
+    "deploy": "WRANGLER_SEND_METRICS=false wrangler deploy"
+  },
+  "dependencies": {
+    "@vigil-sol/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.2.3",
+    "@vitest/runner": "4.1.11",
+    "@vitest/snapshot": "4.1.11",
+    "vite": "8.3.0",
+    "vitest": "4.1.11",
+    "wrangler": "4.136.3"
   }
 }

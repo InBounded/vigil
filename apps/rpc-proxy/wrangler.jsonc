@@ -1,0 +1,36 @@
+// Vigil RPC proxy (Cloudflare Worker). Deploy steps: docs/maintainers.md.
+// Stays within the Workers Free plan: no paid-only bindings, one upstream subrequest per call.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vigil-rpc-proxy",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-15",
+  "workers_dev": true,
+  "preview_urls": false,
+  // No Workers Logs, no Logpush, no source maps uploaded: nothing about requests is kept beyond
+  // Cloudflare's own defaults (docs: SECURITY.md).
+  "observability": { "enabled": false },
+  "logpush": false,
+  "upload_source_maps": false,
+  // Wrangler's own usage metrics, for this project.
+  "send_metrics": false,
+  "vars": {
+    // Comma-separated exact origins of the web app, e.g. "https://vigil.example".
+    // Set at deploy time: `wrangler deploy --var ALLOWED_ORIGINS:<origins>` (docs/maintainers.md).
+    "ALLOWED_ORIGINS": ""
+  },
+  "secrets": {
+    // Mainnet RPC URL with its API key: `wrangler secret put UPSTREAM_RPC_URL`. Never in this file.
+    "required": ["UPSTREAM_RPC_URL"]
+  },
+  // Per-IP limit, per Cloudflare location. Whether this binding is available on the Free plan is
+  // UNVERIFIED (docs/DECISIONS.md, Phase 9); without it the Worker falls back to a best-effort
+  // in-memory limit.
+  "ratelimits": [
+    {
+      "name": "RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 100, "period": 60 }
+    }
+  ]
+}

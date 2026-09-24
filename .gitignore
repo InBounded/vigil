@@ -8,3 +8,9 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# Cloudflare Worker (apps/rpc-proxy): generated types, local state, local secrets
+apps/rpc-proxy/worker-configuration.d.ts
+.wrangler/
+.dev.vars
+.dev.vars.*
