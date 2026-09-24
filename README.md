@@ -20,6 +20,10 @@ It exists as an independent second opinion. If the official signing interface is
 - **Not a guarantee of safety.** Vigil reports what it was able to verify and how it verified it. It never claims a proposal is "safe" or "secure" — only that specific checks found no issues, or that the analysis was incomplete and why.
 - **Not a replacement for the signer's own judgment.** Vigil is a second opinion, not a final authority.
 
+## Web app: mainnet needs your own RPC endpoint
+
+> **Product constraint, not a bug.** The public mainnet RPC (`api.mainnet-beta.solana.com`) refuses requests from browser pages it does not know: a hosted page gets `403 Access forbidden`, and a page opened from a local file is blocked by the browser. The web app therefore has **no default mainnet endpoint**: to analyze mainnet proposals in the browser, add your own RPC endpoint in Settings (or, once it is deployed, use the optional Vigil RPC proxy). Devnet works out of the box with the public devnet endpoint. The CLI is not affected.
+
 ## Command line
 
 > **Not published yet.** The commands below describe the CLI as built; the first npm release comes with a later phase.
