@@ -1,0 +1,106 @@
+{
+  "capturedAt": "2026-09-24T09:17:11.062Z",
+  "cluster": "local-test-validator",
+  "contextSlot": "67",
+  "description": "LOCAL TEST VALIDATOR (not devnet; Squads v4 program and ProgramConfig cloned from devnet). vigil watch cycle after \"B approved (2 of 2)\" on the 2-of-3 multisig 7WqrKdoLyudFPc9C4yrDixHHdhHegNwqPcmF988FExQq created by scripts/devnet-watch-sequence.ts; events: #1 Active → Approved",
+  "genesisHash": "6hSik3K9jW5NcfD41LTdGP4YZzEZe2uFHuPQXjb9TvoF",
+  "accounts": {
+    "11111111111111111111111111111111": {
+      "dataBase64": "c29sYW5hX3N5c3RlbV9wcm9ncmFt",
+      "executable": true,
+      "lamports": "1",
+      "owner": "NativeLoader1111111111111111111111111111111",
+      "space": "21"
+    },
+    "5y8VWk2GgusCTofkDJutbSeoPKm2SKcVoViNXm4BEedp": {
+      "dataBase64": "qPqiZFEOos9gyzNHVv8EaqgKk6WQEKQci1tOFjgt1V7wx1s8LNz8KrV9/A4pPTiorMwd037jH6ln+1J1/3Ewz8FeY79kUQfYAQAAAAAAAAD/AP4AAAAAAQEBAwAAAGerO3jJAmXJX/Gy4mRqsbeE0UGSYzthtr/0FigienS+hykAya0o7GsSlqpHiAmfTJ40/P+adrt03oZgDuypBcMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAACAgAAAAABDAAAAAIAAABAQg8AAAAAAAAAAAA=",
+      "executable": false,
+      "lamports": "2429040",
+      "owner": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+      "space": "221"
+    },
+    "7WqrKdoLyudFPc9C4yrDixHHdhHegNwqPcmF988FExQq": {
+      "dataBase64": "4HR5ukShT+z7cM8B0dilUYj1iNisxlN81Vx3ahYDRIaf0nch38XDQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAQAAAAAAAAAAAAAAAAAAAAD+AwAAAIcpAMmtKOxrEpaqR4gJn0yeNPz/mna7dN6GYA7sqQXDB7V9/A4pPTiorMwd037jH6ln+1J1/3Ewz8FeY79kUQfYB/DQybN1GLWiTlHn8dp8vqMlfyLP+EuvRP6A6YMhiJKWBwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "executable": false,
+      "lamports": "2498640",
+      "owner": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+      "space": "231"
+    },
+    "7ygS2tAhhApeKCWufAYmu9FZQzwPBFrpovXcYDbLbn69": {
+      "dataBase64": "",
+      "executable": false,
+      "lamports": "20000000",
+      "owner": "11111111111111111111111111111111",
+      "space": "0"
+    },
+    "Abdd9P5F4nz8jcLbgWGfvnk3GNJwzjyXRBXh5j5UThtw": {
+      "dataBase64": "Gl69u3SINSFgyzNHVv8EaqgKk6WQEKQci1tOFjgt1V7wx1s8LNz8KgEAAAAAAAAAA5LqtGoAAAAA/wIAAACHKQDJrSjsaxKWqkeICZ9MnjT8/5p2u3TehmAO7KkFw7V9/A4pPTiorMwd037jH6ln+1J1/3Ewz8FeY79kUQfYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "executable": false,
+      "lamports": "3382560",
+      "owner": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+      "space": "358"
+    },
+    "DDUDTGgM95EPDVFBLRBsGfWoCUbPfT6zgd51jmEipxqu": {
+      "dataBase64": "",
+      "executable": false,
+      "lamports": "71649760",
+      "owner": "11111111111111111111111111111111",
+      "space": "0"
+    }
+  },
+  "simulations": {
+    "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQABA2erO3jJAmXJX/Gy4mRqsbeE0UGSYzthtr/0FigienS+hykAya0o7GsSlqpHiAmfTJ40/P+adrt03oZgDuypBcMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQICAAEMAgAAAEBCDwAAAAAAAA==": {
+      "request": {
+        "accounts": [
+          "7ygS2tAhhApeKCWufAYmu9FZQzwPBFrpovXcYDbLbn69",
+          "A6cJYhh9QZVR9B77SLkiQNK9vxTmEUmhjmJMnpWoRacr"
+        ],
+        "innerInstructions": true,
+        "replaceRecentBlockhash": true
+      },
+      "result": {
+        "accounts": [
+          {
+            "dataBase64": "",
+            "executable": false,
+            "lamports": "18995000",
+            "owner": "11111111111111111111111111111111",
+            "space": "0"
+          },
+          {
+            "dataBase64": "",
+            "executable": false,
+            "lamports": "1000000",
+            "owner": "11111111111111111111111111111111",
+            "space": "0"
+          }
+        ],
+        "contextSlot": "66",
+        "err": null,
+        "fee": "5000",
+        "innerInstructionPrograms": [],
+        "loadedAddresses": {
+          "readonly": [],
+          "writable": []
+        },
+        "logs": [
+          "Program 11111111111111111111111111111111 invoke [1]",
+          "Program 11111111111111111111111111111111 success"
+        ],
+        "postBalances": [
+          "18995000",
+          "1000000",
+          "1"
+        ],
+        "postTokenBalances": [],
+        "preBalances": [
+          "20000000",
+          "0",
+          "1"
+        ],
+        "preTokenBalances": [],
+        "unitsConsumed": "150"
+      }
+    }
+  }
+}

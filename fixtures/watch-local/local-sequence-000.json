@@ -1,0 +1,16 @@
+{
+  "capturedAt": "2026-09-24T09:17:01.735Z",
+  "cluster": "local-test-validator",
+  "contextSlot": "45",
+  "description": "LOCAL TEST VALIDATOR (not devnet; Squads v4 program and ProgramConfig cloned from devnet). vigil watch cycle after \"multisig created, nothing proposed\" on the 2-of-3 multisig 7WqrKdoLyudFPc9C4yrDixHHdhHegNwqPcmF988FExQq created by scripts/devnet-watch-sequence.ts; events: none",
+  "genesisHash": "6hSik3K9jW5NcfD41LTdGP4YZzEZe2uFHuPQXjb9TvoF",
+  "accounts": {
+    "7WqrKdoLyudFPc9C4yrDixHHdhHegNwqPcmF988FExQq": {
+      "dataBase64": "4HR5ukShT+z7cM8B0dilUYj1iNisxlN81Vx3ahYDRIaf0nch38XDQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAD+AwAAAIcpAMmtKOxrEpaqR4gJn0yeNPz/mna7dN6GYA7sqQXDB7V9/A4pPTiorMwd037jH6ln+1J1/3Ewz8FeY79kUQfYB/DQybN1GLWiTlHn8dp8vqMlfyLP+EuvRP6A6YMhiJKWBwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "executable": false,
+      "lamports": "2498640",
+      "owner": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+      "space": "231"
+    }
+  }
+}

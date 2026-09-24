@@ -2,7 +2,7 @@
  * `vigil watch --once` replayed over real recorded cycles, in order, with one state file: each
  * alert must be sent exactly once to every notifier (stdout, and Discord and Telegram through a
  * local fake server). The fixtures are what the watch cycle read live, recorded by
- * scripts/devnet-watch-sequence.ts (devnet: created → approved → executed) and
+ * scripts/devnet-watch-sequence.ts (local test validator: created → approved → executed) and
  * scripts/capture-watch.ts (mainnet).
  */
 import { existsSync, readFileSync } from "node:fs";
@@ -41,21 +41,13 @@ function cycleFile(base: string): string {
 async function replay(
   multisig: string,
   bases: readonly string[],
-  cluster: "mainnet" | "devnet",
+  /** How the RPC is chosen: `--cluster mainnet` (public endpoint's host) or the local validator's endpoint. */
+  endpoint: readonly string[],
 ): Promise<Alert[][]> {
   const perCycle: Alert[][] = [];
   for (const base of bases) {
     const result = await run(
-      [
-        "watch",
-        multisig,
-        "--once",
-        "--json",
-        "--cluster",
-        cluster,
-        "--state-file",
-        join(dir, "state.json"),
-      ],
+      ["watch", multisig, "--once", "--json", ...endpoint, "--state-file", join(dir, "state.json")],
       {
         env: {
           NODE_ENV: "test",
@@ -99,18 +91,19 @@ function expectEachDeliveredOnce(alerts: readonly Alert[]): void {
   });
 }
 
-const DEVNET = join(FIXTURES, "watch-devnet", "devnet-sequence");
 /**
- * Conditional ONLY until scripts/devnet-watch-sequence.ts has been run (it needs a funded devnet
- * key; recording paused 2026-09-24, see docs/DECISIONS.md). Once the fixtures are committed, this
- * condition must be removed so a missing fixture fails instead of skipping.
+ * Recorded on a LOCAL TEST VALIDATOR (solana-test-validator 4.2.2, Squads v4 program and its
+ * ProgramConfig cloned from devnet), not on devnet itself: the devnet faucet was rate-limited. The
+ * account bytes are real program output; the cluster is "unknown" to Vigil (a local genesis hash),
+ * so alerts carry no web-app link. See docs/DECISIONS.md.
  */
-const devnetRecorded = existsSync(cycleFile(`${DEVNET}-004`));
+const LOCAL = join(FIXTURES, "watch-local", "local-sequence");
+const LOCAL_RPC = ["--rpc", "http://127.0.0.1:8899"];
 
-describe.runIf(devnetRecorded)("devnet: one proposal created → approved → executed", () => {
+describe("local validator: one proposal created → approved → executed", () => {
   const multisig = (): string => {
     const description = (
-      JSON.parse(readFileSync(cycleFile(`${DEVNET}-000`), "utf8")) as { description: string }
+      JSON.parse(readFileSync(`${LOCAL}-000.json`, "utf8")) as { description: string }
     ).description;
     const match = /multisig ([1-9A-HJ-NP-Za-km-z]{32,44})/.exec(description);
     if (match?.[1] === undefined) {
@@ -120,8 +113,8 @@ describe.runIf(devnetRecorded)("devnet: one proposal created → approved → ex
   };
 
   it("alerts once on creation, once on approval (re-analysed), once on execution, then never again", async () => {
-    const bases = [0, 1, 2, 3, 4, 4].map((i) => `${DEVNET}-${String(i).padStart(3, "0")}`);
-    const cycles = await replay(multisig(), bases, "devnet");
+    const bases = [0, 1, 2, 3, 4, 4].map((i) => `${LOCAL}-${String(i).padStart(3, "0")}`);
+    const cycles = await replay(multisig(), bases, LOCAL_RPC);
     expect(cycles.map((alerts) => alerts.map(summary))).toEqual([
       [], // multisig created, nothing proposed
       ["#1 newActive"], // proposed
@@ -131,14 +124,18 @@ describe.runIf(devnetRecorded)("devnet: one proposal created → approved → ex
       [], // the same chain state again
     ]);
     const [created, approved, executed] = [cycles[1]?.[0], cycles[3]?.[0], cycles[4]?.[0]];
-    expect(created).toMatchObject({ cluster: "devnet", initial: false, verdictSource: "analysis" });
+    expect(created).toMatchObject({
+      cluster: "unknown",
+      initial: false,
+      rpcHost: "127.0.0.1:8899",
+      verdictSource: "analysis",
+    });
     expect(created?.instructions.join(" ")).toContain("0.001 SOL");
     expect(approved).toMatchObject({ verdictSource: "analysis" });
     expect(executed).toMatchObject({ verdict: approved?.verdict, verdictSource: "last-known" });
     for (const alert of [created, approved, executed]) {
-      expect(alert?.permalink).toBe(
-        `https://vigil.example.org/#/ms/${multisig()}/1?cluster=devnet`,
-      );
+      // The web app knows mainnet and devnet only: no link for an unknown cluster.
+      expect(alert?.permalink).toBeNull();
     }
     expectEachDeliveredOnce(cycles.flat());
     const approvedDiscord = server.requests.filter((r) => r.path.startsWith("/discord.com/"))[1];
@@ -150,7 +147,10 @@ describe("mainnet: real cycles of 6TXHbBaU… (a skipped step included)", () => 
   it("first run, #12 executed, #13 created, #13 Active → Executed: each alert once", async () => {
     const base = join(FIXTURES, "watch", "6TXHbBaU");
     const bases = [0, 1, 2, 3, 3].map((i) => `${base}-${String(i).padStart(3, "0")}`);
-    const cycles = await replay("6TXHbBaU8rRk3yJAY42RMymtzoTQFRfz3TKGuALiPqqA", bases, "mainnet");
+    const cycles = await replay("6TXHbBaU8rRk3yJAY42RMymtzoTQFRfz3TKGuALiPqqA", bases, [
+      "--cluster",
+      "mainnet",
+    ]);
     expect(cycles.map((alerts) => alerts.map(summary))).toEqual([
       ["#5 newApproved", "#7 newApproved", "#11 newApproved", "#12 newApproved"],
       ["#12 Approved>Executed"],
