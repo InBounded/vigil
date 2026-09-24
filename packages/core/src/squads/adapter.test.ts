@@ -130,3 +130,21 @@ describe("SquadsV4Adapter.listProposals, against real captured data", () => {
     expect(stale.length).toBeGreaterThan(0);
   });
 });
+
+describe("SquadsV4Adapter.readProposals, against real captured data", () => {
+  it("reads exactly the indices given, in that order, as listProposals would", async () => {
+    const data = await loadFixtureFile(fixturePath("multisig-mixed-permissions"));
+    const adapter = new SquadsV4Adapter(new FixtureRpcClient(data));
+    const listed = await adapter.listProposals(MULTISIG_MIXED_PERMISSIONS, { limit: 50 });
+    const summary = await adapter.fetchMultisig(MULTISIG_MIXED_PERMISSIONS);
+
+    const wanted = [listed[40], listed[3], listed[17]].map((e) => e?.transactionIndex ?? 0n);
+    const read = await adapter.readProposals(summary, wanted);
+
+    expect(read.map((e) => e.transactionIndex)).toEqual(wanted);
+    for (const entry of read) {
+      expect(entry).toEqual(listed.find((e) => e.transactionIndex === entry.transactionIndex));
+    }
+    expect(await adapter.readProposals(summary, [])).toEqual([]);
+  });
+});

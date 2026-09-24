@@ -63,6 +63,18 @@ export class SquadsV4Adapter implements MultisigAdapter {
     for (let i = 0n; i < BigInt(limit) && summary.transactionIndex - i > 0n; i++) {
       indices.push(summary.transactionIndex - i);
     }
+    return this.readProposals(summary, indices);
+  }
+
+  /**
+   * Reads the transaction and proposal accounts at exactly these indices (in the order given) with
+   * one `getMultipleAccounts` call (batched by the RPC client). `multisig` is a summary already
+   * read, so staleness is judged against the same state.
+   */
+  async readProposals(
+    multisig: SquadsMultisigSummary,
+    indices: readonly bigint[],
+  ): Promise<readonly SquadsProposalListEntry[]> {
     if (indices.length === 0) {
       return [];
     }
@@ -71,11 +83,11 @@ export class SquadsV4Adapter implements MultisigAdapter {
       indices.map(async (transactionIndex) => {
         const [transactionPda] = await getTransactionPda({
           index: transactionIndex,
-          multisigPda: multisig,
+          multisigPda: multisig.address,
           programAddress: this.#programAddress,
         });
         const [proposalPda] = await getProposalPda({
-          multisigPda: multisig,
+          multisigPda: multisig.address,
           programAddress: this.#programAddress,
           transactionIndex,
         });
@@ -101,7 +113,7 @@ export class SquadsV4Adapter implements MultisigAdapter {
               decodeProposal(toEncodedAccount(entry.proposalPda, proposalAccount)).data,
             );
       return {
-        isStale: entry.transactionIndex <= summary.staleTransactionIndex,
+        isStale: entry.transactionIndex <= multisig.staleTransactionIndex,
         proposal,
         transactionAddress: transactionAccount === null ? null : entry.transactionPda,
         transactionIndex: entry.transactionIndex,

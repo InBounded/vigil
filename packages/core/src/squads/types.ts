@@ -87,5 +87,10 @@ export interface MultisigAdapter {
     multisig: Address,
     options?: ListProposalsOptions,
   ): Promise<readonly SquadsProposalListEntry[]>;
+  /** The transaction and proposal accounts at exactly these indices, in the order given. */
+  readProposals(
+    multisig: SquadsMultisigSummary,
+    indices: readonly bigint[],
+  ): Promise<readonly SquadsProposalListEntry[]>;
   fetchProposalBundle(multisig: Address, transactionIndex: bigint): Promise<SquadsProposalBundle>;
 }
