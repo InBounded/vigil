@@ -23,8 +23,6 @@ import { onlyProposes, walkInstructions } from "./walk.js";
 const A = addr(1);
 const B = addr(2);
 
-const PLACEHOLDER = /\{([A-Za-z0-9_.]+)(?::[A-Za-z]+)?\}/g;
-
 describe("rule catalogue", () => {
   it("has unique ids in order, with the severity their id says", () => {
     const ids = RULES.map((r) => r.id);
@@ -42,7 +40,7 @@ describe("rule catalogue", () => {
     }
   });
 
-  it("has a sentence for every finding variant in both languages, with the same placeholders", () => {
+  it("has a sentence for every finding variant in every language", () => {
     const keys = RULES.flatMap((rule) =>
       rule.variants.map((v) => (v === "" ? rule.titleKey : `${rule.titleKey}.${v}`)),
     );
@@ -50,9 +48,6 @@ describe("rule catalogue", () => {
       for (const locale of LOCALES) {
         expect(CATALOGS[locale][key], `${locale} ${key}`).toBeDefined();
       }
-      const placeholders = (locale: (typeof LOCALES)[number]) =>
-        [...(CATALOGS[locale][key] ?? "").matchAll(PLACEHOLDER)].map((m) => m[0]).sort();
-      expect(placeholders("pt-PT"), key).toEqual(placeholders("en"));
     }
     // No finding text left without a rule.
     const findingKeys = Object.keys(CATALOGS.en).filter((k) => k.startsWith("finding."));
@@ -381,15 +376,15 @@ describe("rendering findings", () => {
 
   it("formats durations and permissions", () => {
     expect(formatDuration(0n, "en")).toBe("0 s");
-    expect(formatDuration(90_061n, "pt-PT")).toBe("1 d 1 h 1 min 1 s");
+    expect(formatDuration(90_061n, "en")).toBe("1 d 1 h 1 min 1 s");
     expect(formatDuration(3_600n, "en")).toBe("1 h");
     const addMember = {
       ...made("VGL-C006", "critical"),
       params: { member: A, permissions: "Initiate,Vote,Execute" },
       titleKey: "finding.VGL-C006.addMember",
     };
-    expect(renderFinding(addMember, "pt-PT").text).toContain(
-      "com as permissões: iniciar, votar, executar",
+    expect(renderFinding(addMember, "en").text).toContain(
+      "with permissions: initiate, vote, execute",
     );
     expect(
       renderFinding({ ...addMember, params: { member: A, permissions: "Other" } }, "en").text,
@@ -412,11 +407,11 @@ describe("rendering findings", () => {
         verification: "other",
       },
     };
-    expect(renderFinding(upgrade, "pt-PT").text).toBe(
-      "Atualiza o programa desconhecido com o código do buffer desconhecido (hash executável desconhecido; verificação atual do programa: other)",
+    expect(renderFinding(upgrade, "en").text).toBe(
+      "Upgrades program unknown with the code in buffer unknown (executable hash unknown; current verification of the program: other)",
     );
     // On-chain text is shown verbatim: a memo that says "none" is not translated.
     const memo = { ...made("VGL-I002", "info"), params: { memo: "none" } };
-    expect(renderFinding(memo, "pt-PT").text).toBe("Memo: “none”");
+    expect(renderFinding(memo, "en").text).toBe("Memo: “none”");
   });
 });

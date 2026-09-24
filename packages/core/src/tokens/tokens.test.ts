@@ -271,7 +271,6 @@ describe("registry mints whose mint account is not read", () => {
       throw new Error("no transfer");
     }
     expect(renderSummary(transfer, "en").text).toContain("50 USDC");
-    expect(renderSummary(transfer, "pt-PT").text).toContain("50 USDC");
   });
 
   it("uses the mint account itself when it can be read (no registry fallback)", async () => {

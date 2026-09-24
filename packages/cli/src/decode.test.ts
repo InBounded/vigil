@@ -126,23 +126,6 @@ describe("vigil decode <multisig> <index>", () => {
     expect(stdout).toContain("SNAPSHOT, NOT A GUARANTEE");
   });
 
-  it("speaks European Portuguese with --lang pt", async () => {
-    const { stdout } = await run(["decode", BATCH_MULTISIG, "2268", "--lang", "pt"], {
-      env: BATCH,
-    });
-    expect(stdout).toContain("⚠ REQUER ATENÇÃO");
-    expect(stdout).toContain("O que esta proposta faz");
-    expect(stdout).toContain("RETRATO DE UM MOMENTO, NÃO UMA GARANTIA");
-    expect(stdout).toContain("-20\u00A0000 USDC");
-  });
-
-  it("takes the language from LANG when --lang is not given", async () => {
-    const { stdout } = await run(["decode", BATCH_MULTISIG, "2268"], {
-      env: { ...BATCH, LANG: "pt_PT.UTF-8" },
-    });
-    expect(stdout).toContain("Resultados (5)");
-  });
-
   it("--verbose adds accounts, evidence and program details", async () => {
     const { stdout } = await run(["decode", BATCH_MULTISIG, "2268", "--verbose"], { env: BATCH });
     expect(stdout).toContain("Accounts:");
@@ -295,7 +278,6 @@ describe("vigil decode input validation", () => {
       ["decode", BATCH_MULTISIG, "1", "--cluster", "testnet"],
       "--cluster must be one of mainnet, devnet",
     ],
-    [["decode", BATCH_MULTISIG, "1", "--lang", "fr"], "--lang must be one of"],
     [["decode", BATCH_MULTISIG, "1", "--bogus"], "Unknown option '--bogus'"],
   ];
   for (const [argv, message] of cases) {

@@ -42,7 +42,6 @@ const OPTIONS = {
   help: { short: "h", type: "boolean" },
   history: { type: "string" },
   json: { type: "boolean" },
-  lang: { type: "string" },
   limit: { type: "string" },
   "no-external": { type: "boolean" },
   "no-simulate": { type: "boolean" },
@@ -63,10 +62,7 @@ const COMMAND_ONLY: Readonly<Record<string, Command>> = {
 export const DEFAULT_LIST_LIMIT = 20;
 export const MAX_LIST_LIMIT = 100;
 
-export function parseCliArgs(
-  argv: readonly string[],
-  env: Readonly<Record<string, string | undefined>>,
-): ParsedArgs {
+export function parseCliArgs(argv: readonly string[]): ParsedArgs {
   let parsed: ReturnType<typeof parseArgs<{ options: typeof OPTIONS; allowPositionals: true }>>;
   try {
     parsed = parseArgs({ allowPositionals: true, args: [...argv], options: OPTIONS, strict: true });
@@ -102,7 +98,6 @@ export function parseCliArgs(
     "critical",
   );
   const cluster = parseChoice(values.cluster, "--cluster", ["mainnet", "devnet"], "mainnet");
-  const lang = parseChoice(values.lang, "--lang", ["en", "pt", "pt-PT"], localeFromEnv(env));
   const history = parseInteger(values.history, "--history", 0, HISTORY_MAX, 0);
   const limit = parseInteger(values.limit, "--limit", 1, MAX_LIST_LIMIT, DEFAULT_LIST_LIMIT);
   const status = parseChoice(values.status, "--status", ["active", "all"], "active");
@@ -117,7 +112,8 @@ export function parseCliArgs(
       failOn,
       history,
       json: values.json === true,
-      locale: lang === "en" ? "en" : "pt-PT",
+      // English only for now; the text is keyed by locale so another one can be added later.
+      locale: "en",
       rpcFlag: values.rpc,
       simulate: values["no-simulate"] !== true,
       verbose: values.verbose === true,
@@ -129,18 +125,4 @@ export function parseCliArgs(
     tx: values.tx,
     version: values.version === true,
   };
-}
-
-/**
- * The language from the environment (`LC_ALL`, then `LC_MESSAGES`, then `LANG`, as POSIX orders
- * them): Portuguese for any `pt*` locale, English otherwise. `--lang` overrides it.
- */
-export function localeFromEnv(env: Readonly<Record<string, string | undefined>>): "en" | "pt" {
-  for (const name of ["LC_ALL", "LC_MESSAGES", "LANG"]) {
-    const value = env[name];
-    if (value !== undefined && value !== "") {
-      return /^pt([_.-]|$)/i.test(value) ? "pt" : "en";
-    }
-  }
-  return "en";
 }

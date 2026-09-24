@@ -51,7 +51,7 @@ export async function main(argv: readonly string[], environment: CliEnvironment)
 
   let runtime: Runtime | undefined;
   try {
-    const args = parseCliArgs(argv, environment.env);
+    const args = parseCliArgs(argv);
     if (args.version) {
       environment.stdout.write(`${environment.version}\n`);
       return EXIT.ok;

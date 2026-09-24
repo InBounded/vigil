@@ -219,22 +219,15 @@ describe("batch proposal simulated item by item against current state (USDC, #22
     expect(renderFinding(first, "en").text).toBe(
       'Batch item 1: simulation failed: {"InstructionError":["1",{"Custom":"1"}]}',
     );
-    expect(renderFinding(first, "pt-PT").text).toBe(
-      'Item 1 do lote: a simula\u00E7\u00E3o falhou: {"InstructionError":["1",{"Custom":"1"}]}',
-    );
   });
 
-  it("always renders the snapshot note first, in both languages", () => {
+  it("always renders the snapshot note first", () => {
     const en = renderSimulationNotes(batch, "en").map((r) => r.text);
     expect(en[0]).toBe(
       "Snapshot of one moment: this simulation shows what would happen if the transaction ran right now. Network state can change before execution, so the results shown are not a guarantee.",
     );
     expect(en).toContain(
       "Each of the 2 batch items was simulated on its own: the effects of earlier items are not carried into later ones, so a later item may behave differently when the batch really executes.",
-    );
-    const pt = renderSimulationNotes(batch, "pt-PT").map((r) => r.text);
-    expect(pt[0]).toBe(
-      "Retrato de um s\u00F3 momento: esta simula\u00E7\u00E3o mostra o que aconteceria se a transa\u00E7\u00E3o fosse executada agora. O estado da rede pode mudar antes da execu\u00E7\u00E3o, por isso os resultados apresentados n\u00E3o s\u00E3o uma garantia.",
     );
     // Even a result that somehow lost its notes gets the snapshot note.
     const bare = { ...batch, items: [], notes: [] };

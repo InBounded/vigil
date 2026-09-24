@@ -208,7 +208,7 @@ describe("VGL-C003 token authority change", () => {
       params: { account: A, authorityType: "MintTokens", newAuthority: B, oldAuthority: C },
       titleKey: "finding.VGL-C003",
     });
-    expect(renderFinding(found, "pt-PT").text).toContain("Altera a autoridade de emissão");
+    expect(renderFinding(found, "en").text).toContain("Changes the mint authority of");
   });
 
   it("says the authority is removed for good when none is given (Token-2022 extension authority)", async () => {

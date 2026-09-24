@@ -353,9 +353,7 @@ describe("VGL-W006 simulation failed or unavailable", () => {
       params: { detail: "custom program error: 0x1" },
       titleKey: "finding.VGL-W006.failed",
     });
-    expect(renderFinding(found, "pt-PT").text).toBe(
-      "A simula\u00E7\u00E3o falhou: custom program error: 0x1",
-    );
+    expect(renderFinding(found, "en").text).toBe("Simulation failed: custom program error: 0x1");
     const unavailable = await context({
       simulation: {
         code: "rpc-error",

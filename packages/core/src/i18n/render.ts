@@ -11,7 +11,6 @@ import {
 } from "../report.js";
 import type { TokenInfo } from "../tokens/enrich.js";
 import en from "./en.json" with { type: "json" };
-import ptPT from "./pt-PT.json" with { type: "json" };
 
 /**
  * Plain-language rendering of the i18n keys + params the engine produces (instruction summaries,
@@ -37,12 +36,15 @@ import ptPT from "./pt-PT.json" with { type: "json" };
  * render the result as text, never as HTML.
  */
 
-export type Locale = "en" | "pt-PT";
-export const LOCALES: readonly Locale[] = ["en", "pt-PT"];
+/**
+ * Vigil ships in English only. Every text still goes through a keyed catalog, so another language
+ * can be added later by adding its catalog here (and its number format below).
+ */
+export type Locale = "en";
+export const LOCALES: readonly Locale[] = ["en"];
 
 export const CATALOGS: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {
   en,
-  "pt-PT": ptPT,
 };
 
 export interface Rendered {
@@ -62,9 +64,6 @@ interface NumberFormat {
 
 const FORMAT: Readonly<Record<Locale, NumberFormat>> = {
   en: { decimal: ".", group: ",", minDigitsToGroup: 4 },
-  // European Portuguese: decimal comma, (no-break) space between thousands, and no grouping below
-  // five digits ("1000", "10 000"), as CLDR pt-PT (minimumGroupingDigits 2) and `Intl` do.
-  "pt-PT": { decimal: ",", group: "\u00A0", minDigitsToGroup: 5 },
 };
 
 export function t(

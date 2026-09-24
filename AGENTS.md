@@ -89,7 +89,7 @@ Addresses use kit's Address type.
 The core performs no I/O directly: it receives RpcClient, HttpClient and Clock by injection (offline tests, deterministic snapshots).
 Risk rules are pure and deterministic. No any. Typed errors with codes.
 No on-chain string reaches any interface without the sanitizer.
-Code, comments and docs in English. The UI ships in English and European Portuguese (pt-PT).
+Code, comments and docs in English. The UI ships in English only. All user-facing text still goes through keyed i18n catalogs (i18n key + params), so another language can be added later without rework.
 Supply-chain security
 Lockfile committed; CI uses pnpm install --frozen-lockfile. Exact versions (no ^/~).
 Dependency install scripts do not run (pnpm 10 default); allow only what is strictly required, with justification.

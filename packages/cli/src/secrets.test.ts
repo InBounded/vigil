@@ -66,7 +66,7 @@ describe("no secret appears in any output", () => {
     ["help", ["--help"], BATCH],
   ];
   for (const [what, argv, env] of invocations) {
-    for (const mode of [[], ["--json"], ["--verbose"], ["--lang", "pt", "--verbose"]]) {
+    for (const mode of [[], ["--json"], ["--verbose"]]) {
       it(`${what} ${mode.join(" ")}`, async () => {
         const result = await run([...argv, ...mode], { env, stderrTTY: true, stdoutTTY: true });
         expectNoSecret(result, `${what} ${mode.join(" ")}`);

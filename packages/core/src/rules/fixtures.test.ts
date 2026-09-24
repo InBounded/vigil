@@ -68,7 +68,7 @@ describe("program upgrade proposal (squads-program-upgrade.json)", () => {
     data = await loadFixture("squads-program-upgrade");
   });
 
-  it("flags the upgrade inside the proposal being created, marked as proposed, in both languages", async () => {
+  it("flags the upgrade inside the proposal being created, marked as proposed", async () => {
     const { ctx, instructions } = await rawContext(data, CREATE_TX);
     const findings = runRules(ctx);
     const [upgrade] = byRule(findings, "VGL-C001");
@@ -94,10 +94,6 @@ describe("program upgrade proposal (squads-program-upgrade.json)", () => {
     expect(en.text).toBe(
       "Upgrades program Sett…cw5F with the code in buffer Gzew…htsR (executable hash unknown; current verification of the program: unknown) Proposed only: this transaction creates the Squads proposal, and this happens only if the proposal is later approved and executed.",
     );
-    const pt = renderFinding(upgrade, "pt-PT", instructions);
-    expect(pt.missing).toEqual([]);
-    expect(pt.text).toContain("Atualiza o programa Sett…cw5F");
-    expect(pt.text).toContain("Apenas proposto: esta transação cria a proposta Squads");
     expect(computeVerdict(findings, ctx.gaps)).toBe("critical");
   });
 
@@ -186,9 +182,6 @@ describe("config transactions created and executed atomically (config-transactio
       }
       expect(renderFinding(limit, "en", instructions).text).toBe(
         "Adds a spending limit on vault #0: 1 member(s) can spend up to 0.1 SOL per day without a vote, to 1 allowed destination(s)",
-      );
-      expect(renderFinding(limit, "pt-PT", instructions).text).toBe(
-        "Adiciona um limite de gastos ao cofre n.º 0: 1 membro(s) poderão gastar até 0,1 SOL por dia sem votação, para 1 destino(s) autorizado(s)",
       );
 
       // Same real instructions without the execute step: now the change is only proposed.

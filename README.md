@@ -37,7 +37,7 @@ npx @vigil-sol/cli verify <program>                # upgrade authority, last dep
 npx @vigil-sol/cli rules                           # every rule; explain one with: explain VGL-C001
 ```
 
-`<multisig>` is the multisig address shown in Squads settings (not a vault address), and `<index>` is the proposal number. The report starts with the verdict, then the findings by severity, what the proposal does, the balance changes of a simulation (**a snapshot of one moment, never a guarantee**) and the programs involved. Every address is shown in full. `--verbose` adds accounts, evidence and logs; `--lang pt` switches to European Portuguese (the default follows `LANG`).
+`<multisig>` is the multisig address shown in Squads settings (not a vault address), and `<index>` is the proposal number. The report starts with the verdict, then the findings by severity, what the proposal does, the balance changes of a simulation (**a snapshot of one moment, never a guarantee**) and the programs involved. Every address is shown in full. `--verbose` adds accounts, evidence and logs. Vigil ships in English only.
 
 **RPC endpoints.** By default the public endpoint of `--cluster mainnet|devnet` is used; the real network is always confirmed from the RPC's genesis hash. An endpoint with an API key must be given in an environment variable, never as a flag (flags end up in shell history and process lists), and only its host is ever printed:
 

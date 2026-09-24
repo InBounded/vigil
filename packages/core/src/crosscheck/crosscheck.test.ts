@@ -161,9 +161,6 @@ describe("VGL-C012 RPCs disagree", () => {
     expect(renderFinding(finding, "en").text).toBe(
       "6W37\u2026SfZX (upgrade buffer) has different content on your two RPC endpoints: at least one of them is out of date or not telling the truth, so what this proposal really does cannot be established",
     );
-    expect(renderFinding(finding, "pt-PT").text).toBe(
-      "6W37\u2026SfZX (buffer de atualiza\u00E7\u00E3o) tem conte\u00FAdo diferente nos seus dois endpoints RPC: pelo menos um deles est\u00E1 desatualizado ou n\u00E3o est\u00E1 a dizer a verdade, por isso n\u00E3o \u00E9 poss\u00EDvel saber o que esta proposta faz realmente",
-    );
   });
 
   it("says which RPC does not have the account at all", async () => {

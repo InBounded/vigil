@@ -30,32 +30,19 @@ import {
 
 const FIXTURES = fileURLToPath(new URL("../../../../fixtures/", import.meta.url));
 
-const placeholders = (template: string) =>
-  [...template.matchAll(/\{([A-Za-z0-9_.]+)(?::([A-Za-z]+))?\}/g)].map((m) => m[0]).sort();
-
 function flatten(instructions: readonly DecodedInstruction[]): DecodedInstruction[] {
   return instructions.flatMap((ix) => [ix, ...flatten(ix.inner ?? [])]);
 }
 
 describe("i18n catalogs", () => {
-  it("have exactly the same keys in English and European Portuguese", () => {
-    expect(Object.keys(CATALOGS["pt-PT"]).sort()).toEqual(Object.keys(CATALOGS.en).sort());
-  });
-
-  it("use the same placeholders in both languages for every key", () => {
-    for (const [key, template] of Object.entries(CATALOGS.en)) {
-      expect(placeholders(CATALOGS["pt-PT"][key] ?? ""), key).toEqual(placeholders(template));
-    }
-  });
-
-  it("give every native and Squads instruction a summary in both languages", () => {
+  it("give every native and Squads instruction a summary in every language", () => {
     const missing: string[] = [];
     let checked = 0;
     for (const decoder of PROGRAM_DECODERS) {
       expect(decoder.instructionNames.length, decoder.key).toBeGreaterThan(0);
       for (const name of decoder.instructionNames) {
+        checked++;
         for (const locale of LOCALES) {
-          checked++;
           if (CATALOGS[locale][`ix.${decoder.key}.${name}`] === undefined) {
             missing.push(`${locale} ix.${decoder.key}.${name}`);
           }
@@ -63,10 +50,10 @@ describe("i18n catalogs", () => {
       }
     }
     expect(missing).toEqual([]);
-    expect(checked).toBeGreaterThan(400);
+    expect(checked).toBeGreaterThan(200);
   });
 
-  it("explain every analysis gap to the signer in both languages", () => {
+  it("explain every analysis gap to the signer in every language", () => {
     for (const code of ANALYSIS_GAP_CODES) {
       for (const locale of LOCALES) {
         expect(CATALOGS[locale][`gap.${code}`], `${locale} ${code}`).toBeDefined();
@@ -77,7 +64,7 @@ describe("i18n catalogs", () => {
     );
   });
 
-  it("name every SPL Token and Token-2022 authority type in both languages", () => {
+  it("name every SPL Token and Token-2022 authority type in every language", () => {
     const types = [
       ...TOKEN_2022_AUTHORITY_TYPES,
       ...Object.values(AuthorityType).filter((v): v is string => typeof v === "string"),
@@ -106,21 +93,7 @@ describe("number formatting", () => {
     expect(formatAmount("1", 9, "en")).toBe("0.000000001");
     expect(formatAmount("18446744073709551615", 0, "en")).toBe("18,446,744,073,709,551,615");
     expect(formatAmount("0", 6, "en")).toBe("0");
-  });
-
-  it("uses a no-break-space group separator and a decimal comma in pt-PT", () => {
-    expect(formatAmount(250000500000n, 6, "pt-PT")).toBe("250\u00A0000,5");
-  });
-
-  it("groups pt-PT digits only from five digits, like CLDR and Intl", () => {
-    expect(formatAmount("1000", 0, "pt-PT")).toBe("1000");
-    expect(formatAmount("9999500", 3, "pt-PT")).toBe("9999,5");
-    expect(formatAmount("10000", 0, "pt-PT")).toBe("10\u00A0000");
     expect(formatAmount("1000", 0, "en")).toBe("1,000");
-    const intl = new Intl.NumberFormat("pt-PT", { maximumFractionDigits: 0 });
-    for (const n of [1000, 9999, 10000, 1234567]) {
-      expect(formatAmount(String(n), 0, "pt-PT")).toBe(intl.format(n).replace(/\s/g, "\u00A0"));
-    }
   });
 
   it("shortens addresses to the first and last four characters", () => {
@@ -156,7 +129,7 @@ describe("summaries of real mainnet instructions", () => {
     return flatten(annotated.instructions);
   }
 
-  it("says what a Squads vault transfer does, in plain words, in both languages", async () => {
+  it("says what a Squads vault transfer does, in plain words", async () => {
     // 99pbDSgf... is the real owner of destination token account 6jzsmLLz... (and the recipient
     // named in the proposal's own memo, "Transfer (2/8) -> 99pbDSgf...").
     const all = await proposal();
@@ -168,11 +141,6 @@ describe("summaries of real mainnet instructions", () => {
     expect(en.missing).toEqual([]);
     expect(en.text).toBe(
       "Transfers 13,446.797098256 of token BjcR…EroT (declared name “IdleMine”, symbol “IDLE”) from Vault #0 to 99pb…6WHB (token account 6jzs…4LKC)",
-    );
-    const pt = renderSummary(idle, "pt-PT");
-    expect(pt.missing).toEqual([]);
-    expect(pt.text).toBe(
-      "Transfere 13\u00A0446,797098256 do token BjcR…EroT (nome declarado “IdleMine”, símbolo “IDLE”) de Cofre n.º 0 para 99pb…6WHB (conta de token 6jzs…4LKC)",
     );
     // With full addresses (the CLI), every address is complete and follows its label.
     const full = renderSummary(idle, "en", { addresses: "full" });
@@ -190,7 +158,7 @@ describe("summaries of real mainnet instructions", () => {
     );
   });
 
-  it("renders every instruction of every real fixture in both languages with no missing values", async () => {
+  it("renders every instruction of every real fixture with no missing values", async () => {
     const warn = vi.spyOn(console, "warn");
     const files = (await readdir(FIXTURES)).filter((f) => f.endsWith(".json"));
     let rendered = 0;
@@ -250,7 +218,7 @@ describe("on-chain text in summaries is never translated", () => {
   it("shows a memo and a seed that read “none” exactly as written", () => {
     const memo = decodeBuilt(memoProgram.getAddMemoInstruction({ memo: "none" }));
     expect(memo.summary?.nullParams).toBeUndefined();
-    expect(renderSummary(memo, "pt-PT").text).toBe("Adiciona a nota “none”");
+    expect(renderSummary(memo, "en").text).toBe("Adds the note “none”");
     const seeded = decodeBuilt(
       system.getCreateAccountWithSeedInstruction({
         amount: 1n,
@@ -263,10 +231,10 @@ describe("on-chain text in summaries is never translated", () => {
         space: 0n,
       }),
     );
-    expect(renderSummary(seeded, "pt-PT").text).toContain("(semente “none”)");
+    expect(renderSummary(seeded, "en").text).toContain("(seed “none”)");
   });
 
-  it("still says “none” for an argument that is really null, in each language", () => {
+  it("still says “none” for an argument that is really null", () => {
     const pointer = decodeBuilt(
       token2022.getInitializeMetadataPointerInstruction({
         authority: null,
@@ -276,7 +244,6 @@ describe("on-chain text in summaries is never translated", () => {
     );
     expect(pointer.summary?.nullParams).toEqual(["authority"]);
     expect(renderSummary(pointer, "en").text).toMatch(/\(authority none\)$/);
-    expect(renderSummary(pointer, "pt-PT").text).toMatch(/\(autoridade nenhum\)$/);
     const removed = decodeBuilt(
       token.getSetAuthorityInstruction({
         authorityType: AuthorityType.FreezeAccount,
@@ -307,7 +274,7 @@ describe("on-chain text in summaries is never translated", () => {
 });
 
 describe("settings changes of config proposals", () => {
-  it("renders every action of the real config transactions in both languages", async () => {
+  it("renders every action of the real config transactions", async () => {
     let rendered = 0;
     for (const name of ["config-transaction", "config-transaction-2"]) {
       const data = await loadFixtureFile(`${FIXTURES}${name}.json`);
@@ -376,7 +343,7 @@ describe("settings changes of config proposals", () => {
       `Set the rent collector to ${shortAddress(addr(11))}`,
       `Change the config authority to ${shortAddress(addr(12))}`,
     ]);
-    const usdc = renderConfigAction(actions[6] as ConfigAction, "pt-PT", {
+    const usdc = renderConfigAction(actions[6] as ConfigAction, "en", {
       tokens: [
         {
           decimals: 6,
@@ -386,9 +353,9 @@ describe("settings changes of config proposals", () => {
         },
       ],
     });
-    expect(usdc.text).toContain("pode enviar 5 USDC por semana sem votação");
+    expect(usdc.text).toContain("may send 5 USDC per week without a vote");
     for (const action of actions) {
-      expect(renderConfigAction(action, "pt-PT").missing).toEqual([]);
+      expect(renderConfigAction(action, "en").missing).toEqual([]);
     }
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { localeFromEnv, parseCliArgs } from "./args.js";
+import { parseCliArgs } from "./args.js";
 import { fixtureMode } from "./fixture-mode.js";
 import { exitCodeFrom } from "./runtime.js";
 import { checkRpcUrl } from "./secrets.js";
@@ -48,26 +48,9 @@ describe("exit codes", () => {
   });
 });
 
-describe("language", () => {
-  it("comes from LC_ALL, then LC_MESSAGES, then LANG", () => {
-    expect(localeFromEnv({})).toBe("en");
-    expect(localeFromEnv({ LANG: "pt_PT.UTF-8" })).toBe("pt");
-    expect(localeFromEnv({ LANG: "pt" })).toBe("pt");
-    expect(localeFromEnv({ LANG: "pt_BR.UTF-8", LC_ALL: "en_US.UTF-8" })).toBe("en");
-    expect(localeFromEnv({ LANG: "en_GB", LC_MESSAGES: "pt_PT" })).toBe("pt");
-    expect(localeFromEnv({ LANG: "ptx" })).toBe("en");
-    expect(localeFromEnv({ LANG: "", LC_ALL: "" })).toBe("en");
-  });
-
-  it("--lang overrides the environment", () => {
-    expect(parseCliArgs(["rules", "--lang", "en"], { LANG: "pt_PT" }).global.locale).toBe("en");
-    expect(parseCliArgs(["rules", "--lang", "pt-PT"], {}).global.locale).toBe("pt-PT");
-  });
-});
-
 describe("parseCliArgs", () => {
   it("gives the documented defaults", () => {
-    const parsed = parseCliArgs(["decode", "a", "1"], {});
+    const parsed = parseCliArgs(["decode", "a", "1"]);
     expect(parsed.global).toEqual({
       cluster: "mainnet",
       clusterGiven: false,

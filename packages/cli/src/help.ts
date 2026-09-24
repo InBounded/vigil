@@ -9,7 +9,6 @@ const GLOBAL = `Options (every command):
   --cluster mainnet|devnet Picks the default RPC only; the real network is always
                            confirmed from the RPC's genesis hash. Default: mainnet.
   --json                   Print machine-readable JSON only (stdout).
-  --lang en|pt             Language. Default: from LC_ALL / LC_MESSAGES / LANG, else en.
   --no-simulate            Do not simulate (the analysis is then incomplete).
   --no-external            Do not ask the program-verification API (verify.osec.io).
   --history <N>            Check destinations against the vault's last N transactions

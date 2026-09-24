@@ -47,7 +47,7 @@ apps/rpc-proxy  ──┘         │
 - **Phase 4 (risk rules):**
   - `packages/core/src/rules/`: 27 pure, deterministic rules (`RULES`) over a `RuleContext` built by `createRuleContext` (partial report, multisig, proposal, options, known addresses, facts gathered beforehand); `runRules` orders the findings (VGL-W011 first) and `computeVerdict` applies the verdict rule. Rule metadata generates `docs/rules.md` (`pnpm docs:rules`).
   - `packages/core/src/report.ts`: `Finding`, `Severity`, `Verdict`, and the rule inputs Phase 5 fills (`ProgramInfo`, `SimulationResult`, `ConfigAction`).
-  - `packages/core/src/i18n/render.ts`: `renderFinding` (en, pt-PT).
+  - `packages/core/src/i18n/render.ts`: `renderFinding` (English only; text is keyed by locale so another language can be added later).
   - Not yet built: gathering the facts the rules read (balances, history, program/buffer accounts, verification, simulation), report assembly, both UIs.
 - **Phase 5:** simulation, program information, RPC cross-check (gatherers only; see `docs/DECISIONS.md`).
 - **Phase 6 (CLI):**

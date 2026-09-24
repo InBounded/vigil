@@ -264,9 +264,6 @@ describe("VGL-I004 proposal status", () => {
     expect(renderFinding(waiting, "en").text).toBe(
       "Approved (2 of 2); can be executed in 50 min (time lock 1 h)",
     );
-    expect(renderFinding(waiting, "pt-PT").text).toBe(
-      "Aprovada (2 de 2); pode ser executada dentro de 50 min (bloqueio temporal 1 h)",
-    );
     const ready = await statusOf(
       proposal({ kind: "Approved", timestamp: NOW - 7_200n }, { approved: members }),
       3_600,

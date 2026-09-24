@@ -229,9 +229,6 @@ describe("VGL-C006 multisig configuration change", () => {
     expect(text[8]).toBe(
       "Adds a spending limit on vault #0: 2 member(s) can spend up to 1,000 USDC per month without a vote, to any address",
     );
-    expect(renderFinding(found[8] as Finding, "pt-PT").text).toBe(
-      "Adiciona um limite de gastos ao cofre n.º 0: 2 membro(s) poderão gastar até 1000 USDC por mês sem votação, para qualquer endereço",
-    );
   });
 
   it("marks a config proposal being created as proposed, and a direct config-authority change as not", async () => {
