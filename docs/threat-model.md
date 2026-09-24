@@ -16,6 +16,8 @@ The web app's hosting, build pipeline, or CDN is compromised to serve a modified
 
 **Mitigation:** reproducible builds, a published provenance attestation for each release, and support for running the analysis fully offline (a locally built artifact with a hash the user can verify, or the CLI, which requires no web app at all).
 
+**Status (Phase 7):** the offline single-file build exists, with its SHA-256 published next to it; its `<meta>` CSP allows only its own inline script and style by hash, so a modified file does not run (checked in Chromium). The About page explains how to check a build and points to the CLI. The page loads nothing from third parties (no CDN, fonts or analytics; a test checks the built output). Reproducible builds and provenance attestations for the web app are still to come with the release phase.
+
 ## T3 — A compromised dependency
 
 A transitive or direct npm dependency is compromised (malicious publish, account takeover) and ships malicious code.
@@ -63,3 +65,12 @@ An RPC error, simulation failure, or undecodable instruction causes part of the 
 A proposal is analyzed as safe, but before it executes, relevant on-chain state changes — most importantly, a program in the transaction gets upgraded by its (possibly third-party) upgrade authority, changing its behavior.
 
 **Mitigation:** any program invoked by the transaction that has a non-immutable upgrade authority is flagged explicitly. The report shows the slot and wall-clock time the analysis was performed at, and both interfaces offer a clear "re-analyze" action before a signer votes or executes.
+
+## T-web — Attacks on the web page itself
+
+- **Hostile strings turned into markup or code.** On-chain text is rendered by React as text only; `dangerouslySetInnerHTML`, `innerHTML`, `eval`, `new Function` and similar are banned by Biome rules and by a source test. A second barrier (`safeText`) strips control, bidi, zero-width and tag characters from every report text, including text core passes through unchanged (simulation logs). A test renders a real analysis of a transaction whose memo carries HTML, a script tag, a `javascript:` link and invisible characters.
+- **Injected or third-party scripts.** CSP `script-src 'self'` (hashes in the offline file), `object-src 'none'`, `base-uri 'none'`, `form-action 'none'`; no third-party resources at all.
+- **Clickjacking.** `frame-ancestors 'none'` and `X-Frame-Options: DENY` on the hosted build. **Not possible on the GitHub Pages mirror** (no custom headers; `frame-ancestors` is ignored in `<meta>`), which the README says.
+- **API keys in RPC endpoint URLs.** Stored only in the browser, shown nowhere (reports show the host only; error messages never include transport text). Not stored at all by the offline file, whose storage other local files can read.
+- **Look-alike addresses.** Addresses are always shown in full, in groups of four; an address flagged as possible address poisoning (VGL-C008) is highlighted wherever it appears, with the characters that differ from the address it imitates marked.
+

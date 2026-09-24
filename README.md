@@ -20,9 +20,24 @@ It exists as an independent second opinion. If the official signing interface is
 - **Not a guarantee of safety.** Vigil reports what it was able to verify and how it verified it. It never claims a proposal is "safe" or "secure" — only that specific checks found no issues, or that the analysis was incomplete and why.
 - **Not a replacement for the signer's own judgment.** Vigil is a second opinion, not a final authority.
 
-## Web app: mainnet needs your own RPC endpoint
+## Web app
 
-> **Product constraint, not a bug.** The public mainnet RPC (`api.mainnet-beta.solana.com`) refuses requests from browser pages it does not know: a hosted page gets `403 Access forbidden`, and a page opened from a local file is blocked by the browser. The web app therefore has **no default mainnet endpoint**: to analyze mainnet proposals in the browser, add your own RPC endpoint in Settings (or, once it is deployed, use the optional Vigil RPC proxy). Devnet works out of the box with the public devnet endpoint. The CLI is not affected.
+> **Mainnet needs your own RPC endpoint (product constraint, not a bug).** The public mainnet RPC (`api.mainnet-beta.solana.com`) refuses requests from browser pages it does not know: a hosted page gets `403 Access forbidden`, and a page opened from a local file is blocked by the browser. The web app therefore has **no default mainnet endpoint**: to analyze mainnet proposals in the browser, add your own RPC endpoint in Settings (or, once it is deployed, use the optional Vigil RPC proxy). Devnet works out of the box with the public devnet endpoint. The CLI is not affected.
+
+> **Not deployed yet.** Hosting and release publishing come with a later phase.
+
+A static app for signers: paste a multisig address or a base64 transaction, see the multisig (members, threshold, time lock, weaknesses) and its recent proposals, and open a report that starts with the verdict and says what the proposal does, what it changes (simulation), which programs it touches, and what could not be checked. Every link is shareable (`#/ms/<multisig>/<index>`, `#/tx?data=<base64>`, `&cluster=devnet`) and needs no server. Settings stay in your browser; nothing is sent anywhere except to your RPC endpoint and, unless you turn it off, the program-verification API (`verify.osec.io`).
+
+```sh
+pnpm -F @vigil/web dev      # local development server
+pnpm -F @vigil/web build    # the three builds below
+```
+
+| Build | Folder | For |
+|---|---|---|
+| Hosted | `apps/web/dist/` | Cloudflare Pages. `public/_headers` sends the Content Security Policy, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff` and a restrictive `Permissions-Policy`. |
+| GitHub Pages mirror | `apps/web/dist-ghpages/` | GitHub Pages cannot send custom headers, so the CSP is a `<meta>` tag. **`frame-ancestors` has no effect in a `<meta>` CSP and `X-Frame-Options` cannot be set there, so the mirror cannot prevent being framed (clickjacking); prefer the hosted build.** A GitHub Pages user site also shares its storage with every other page under the same `*.github.io` origin. |
+| Offline file | `apps/web/dist-offline/vigil-offline-<version>.html` | One self-contained HTML file to open from your disk, with its SHA-256 next to it (`sha256sum -c vigil-offline-<version>.html.sha256`). Its inline script and style are allowed by their SHA-256 in its `<meta>` CSP, so a modified file does not run. RPC endpoints you enter there are kept only until you close it: other local files opened in the same browser could read stored ones. |
 
 ## Command line
 
