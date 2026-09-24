@@ -1,4 +1,6 @@
 import type { Clock, HttpClient, IdlCache, RpcClient } from "@vigil-sol/core";
+import type { StateFiles } from "./watch/state-file.js";
+import type { NotifierHttp } from "./watch/transport.js";
 
 /** Where the CLI writes. Injected so tests capture output and decide what is a terminal. */
 export interface OutputStream {
@@ -25,4 +27,14 @@ export interface CliEnvironment {
   createHttp(): HttpClient;
   readonly idlCache?: IdlCache;
   readonly version: string;
+  /** `vigil watch`: its state file. */
+  readonly files: StateFiles;
+  /** The user's home directory, for the default state path. */
+  readonly homeDir: string | undefined;
+  /** `vigil watch`: how alerts reach Discord and Telegram. */
+  notifierHttp(): NotifierHttp;
+  /** Waits, returning early when `signal` aborts. */
+  sleep(ms: number, signal?: AbortSignal): Promise<void>;
+  /** Aborted on SIGINT / SIGTERM, so `vigil watch` stops between cycles. */
+  readonly shutdown?: AbortSignal;
 }

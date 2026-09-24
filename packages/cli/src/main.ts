@@ -1,9 +1,10 @@
-import { AnalysisError, RuleOptionsError } from "@vigil-sol/core";
+import { AnalysisError, RuleOptionsError, WatchError } from "@vigil-sol/core";
 import { parseCliArgs } from "./args.js";
 import { decodeCommand } from "./commands/decode.js";
 import { listCommand } from "./commands/list.js";
-import { explainCommand, rulesCommand, watchCommand } from "./commands/rules.js";
+import { explainCommand, rulesCommand } from "./commands/rules.js";
 import { verifyCommand } from "./commands/verify.js";
+import { watchCommand } from "./commands/watch.js";
 import type { CliEnvironment } from "./environment.js";
 import { CliError, EXIT } from "./errors.js";
 import { helpText } from "./help.js";
@@ -25,6 +26,14 @@ const ANALYSIS_HINTS: Readonly<Record<AnalysisError["code"], string>> = {
     "Run vigil list <multisig> --status all to see which transactions exist. Executed or cancelled transactions may have been closed.",
 };
 
+const WATCH_HINTS: Readonly<Record<WatchError["code"], string>> = {
+  CLUSTER_MISMATCH:
+    "Use an RPC on the network the state was recorded on, or a different --state-file for this network.",
+  MULTISIG_MISMATCH: "Pass the state file of this multisig, or another --state-file.",
+  STATE_INVALID:
+    "Fix or move the state file. Removing it makes the next run alert on every pending proposal again.",
+};
+
 /**
  * Runs one CLI invocation and returns its exit code. Every byte written goes through the
  * redactor, so no configured RPC URL (which may hold an API key) can be printed.
@@ -33,6 +42,8 @@ export async function main(argv: readonly string[], environment: CliEnvironment)
   const redactor = new Redactor();
   redactor.add(environment.env.VIGIL_RPC_URL);
   redactor.add(environment.env.VIGIL_CROSS_CHECK_RPC_URL);
+  redactor.add(environment.env.VIGIL_DISCORD_WEBHOOK);
+  redactor.add(environment.env.VIGIL_TELEGRAM_BOT_TOKEN);
   for (const arg of argv) {
     const value = arg.includes("=") && arg.startsWith("--") ? arg.slice(arg.indexOf("=") + 1) : arg;
     if (/^[a-z][a-z0-9+.-]*:\/\//i.test(value)) {
@@ -73,7 +84,7 @@ export async function main(argv: readonly string[], environment: CliEnvironment)
       case "explain":
         return explainCommand(args, runtime);
       case "watch":
-        return watchCommand(runtime);
+        return await watchCommand(args, runtime);
     }
   } catch (error) {
     runtime?.progress.clear();
@@ -82,6 +93,9 @@ export async function main(argv: readonly string[], environment: CliEnvironment)
     }
     if (error instanceof AnalysisError) {
       return fail(sentence(error.message), ANALYSIS_HINTS[error.code]);
+    }
+    if (error instanceof WatchError) {
+      return fail(sentence(error.message), WATCH_HINTS[error.code]);
     }
     if (error instanceof RuleOptionsError) {
       return fail(sentence(error.message));

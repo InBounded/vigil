@@ -6,6 +6,27 @@ import { CATALOGS, t as coreText, type Locale } from "@vigil-sol/core";
  * the CLI and the web app say the same thing.
  */
 const en = {
+  "alert.analysisFailed": "not analysed: {error}",
+  "alert.approved": "Proposal #{index} approved: ready to execute",
+  "alert.changed": "Proposal #{index}: {from} → {to}",
+  "alert.closed": "Proposal #{index} closed (its final status could not be read)",
+  "alert.does": "What it does:",
+  "alert.field.multisig": "Multisig: {multisig} ({cluster})",
+  "alert.field.verdict": "Verdict: {verdict}",
+  "alert.findings": "Top findings ({shown} of {total}):",
+  "alert.footer": "Read-only alert from Vigil · RPC {host} · slot {slot} · {time}",
+  "alert.lastVerdict": "{verdict} (last analysis; not re-analysed)",
+  "alert.link": "Details: {url}",
+  "alert.more": "…and {count} more",
+  "alert.new": "New proposal #{index} ({status})",
+  "alert.newClosed": "New transaction #{index}, already closed before Vigil could read it",
+  "alert.noFindings": "No findings from the checks performed.",
+  "alert.notAnalysed": "not analysed",
+  "alert.pending": "Pending proposal #{index} ({status})",
+  "alert.status.closed": "closed",
+  "alert.status.noProposal": "no proposal yet",
+  "alert.timeLock": "Time lock {duration}: executable after {time}",
+  "alert.truncated": "…(cut to fit the message limit; open the link or run vigil decode)",
   "balance.closed": "account closed",
   "balance.created": "account created",
   "balance.feeExcluded": "fee excluded",
@@ -101,6 +122,10 @@ export type MessageKey = keyof typeof en;
 export const MESSAGES: Readonly<Record<Locale, Readonly<Record<MessageKey, string>>>> = {
   en,
 };
+
+export function isMessageKey(key: string): key is MessageKey {
+  return Object.hasOwn(en, key);
+}
 
 export function m(
   locale: Locale,

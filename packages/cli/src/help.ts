@@ -30,6 +30,17 @@ const ENV = `Environment:
                                              the host is ever shown)
   NO_COLOR                                   Disable colours`;
 
+const WATCH_ENV = `Alerts (environment variables only; the webhook URL and the bot token are secrets):
+  VIGIL_DISCORD_WEBHOOK       Discord webhook URL (https://discord.com/api/webhooks/…)
+  VIGIL_TELEGRAM_BOT_TOKEN    Telegram bot token, with
+  VIGIL_TELEGRAM_CHAT_ID      the chat id (-100…) or @channelusername
+  VIGIL_WEB_URL               Address of a Vigil web app, for a link in each alert
+                              (no default)
+  XDG_STATE_HOME              State directory (default ~/.local/state); the state is
+                              kept in $XDG_STATE_HOME/vigil/<multisig>.json
+Standard output always gets every alert: one readable line each, or one JSON object
+per line with --json. Logs go to standard error.`;
+
 const OVERVIEW = `Vigil: explains what a Squads v4 proposal or a Solana transaction will do, and flags
 risks, before you vote. Read-only: it never signs or sends anything.
 
@@ -38,8 +49,8 @@ Usage:
   vigil decode --tx <base64 | ->      Analyse a base64 transaction (- reads stdin)
   vigil list <multisig>               List proposals with status and a short verdict
   vigil verify <program>              Upgrade authority, last deploy, hash, verification
-  vigil watch <multisig>              Watch for new proposals and alert (arrives in a
-                                      later version)
+  vigil watch <multisig>              Alert on new proposals and when one is ready
+                                      to execute (Discord, Telegram, stdout)
   vigil rules                         List every rule
   vigil explain <ruleId>              Explain one rule
 
@@ -96,10 +107,25 @@ hash of its code, and whether verify.osec.io reports a verified build.
 
 ${GLOBAL}`,
   watch: `Usage:
-  vigil watch <multisig>
+  vigil watch <multisig> [--interval SECONDS] [options]
+  vigil watch <multisig> --once [--state-file PATH] [options]
 
-Watches a multisig for new proposals and sends alerts. This command arrives in a later
-version of Vigil; until then, run vigil list <multisig> on a schedule.`,
+Reads the multisig every --interval seconds and alerts:
+  - on every new proposal (before anyone approves), with its analysis;
+  - when a proposal is approved (ready to execute; re-analysed), executed, rejected or
+    cancelled.
+The first run, with no state yet, alerts on the proposals already pending among the
+latest 20 transactions. Each alert is sent once per notifier; failed sends are retried
+with backoff and, if still failing, kept and retried on the next cycle (for 24 hours).
+  --interval <S>          Seconds between reads (15-86400, default 60).
+  --once                  One cycle, then exit (cron, GitHub Actions). Exit code 0 when
+                          the multisig was read and every alert delivered, else 3.
+  --state-file <path>     Where to keep the state (default: see XDG_STATE_HOME below).
+Run one watcher per state file at a time.
+
+${WATCH_ENV}
+
+${GLOBAL}`,
 };
 
 export function helpText(command: Command | undefined): string {

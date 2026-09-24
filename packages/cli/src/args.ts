@@ -33,6 +33,10 @@ export interface ParsedArgs {
   readonly tx: string | undefined;
   readonly limit: number;
   readonly status: "active" | "all";
+  /** `watch --interval`, in seconds. */
+  readonly interval: number;
+  readonly once: boolean;
+  readonly stateFile: string | undefined;
 }
 
 const OPTIONS = {
@@ -41,11 +45,14 @@ const OPTIONS = {
   "fail-on": { type: "string" },
   help: { short: "h", type: "boolean" },
   history: { type: "string" },
+  interval: { type: "string" },
   json: { type: "boolean" },
   limit: { type: "string" },
   "no-external": { type: "boolean" },
   "no-simulate": { type: "boolean" },
+  once: { type: "boolean" },
   rpc: { type: "string" },
+  "state-file": { type: "string" },
   status: { type: "string" },
   tx: { type: "string" },
   verbose: { type: "boolean" },
@@ -54,13 +61,20 @@ const OPTIONS = {
 
 /** Options that only one command takes. */
 const COMMAND_ONLY: Readonly<Record<string, Command>> = {
+  interval: "watch",
   limit: "list",
+  once: "watch",
+  "state-file": "watch",
   status: "list",
   tx: "decode",
 };
 
 export const DEFAULT_LIST_LIMIT = 20;
 export const MAX_LIST_LIMIT = 100;
+export const DEFAULT_WATCH_INTERVAL = 60;
+export const MIN_WATCH_INTERVAL = 15;
+/** One day: a longer interval is a scheduling mistake, use --once from cron instead. */
+export const MAX_WATCH_INTERVAL = 86_400;
 
 export function parseCliArgs(argv: readonly string[]): ParsedArgs {
   let parsed: ReturnType<typeof parseArgs<{ options: typeof OPTIONS; allowPositionals: true }>>;
@@ -101,6 +115,20 @@ export function parseCliArgs(argv: readonly string[]): ParsedArgs {
   const history = parseInteger(values.history, "--history", 0, HISTORY_MAX, 0);
   const limit = parseInteger(values.limit, "--limit", 1, MAX_LIST_LIMIT, DEFAULT_LIST_LIMIT);
   const status = parseChoice(values.status, "--status", ["active", "all"], "active");
+  const interval = parseInteger(
+    values.interval,
+    "--interval",
+    MIN_WATCH_INTERVAL,
+    MAX_WATCH_INTERVAL,
+    DEFAULT_WATCH_INTERVAL,
+  );
+  const stateFile = values["state-file"];
+  if (stateFile !== undefined && stateFile.trim() === "") {
+    throw new CliError("--state-file needs a path.", "Example: --state-file ./vigil-state.json");
+  }
+  if (values.once === true && values.interval !== undefined) {
+    throw new CliError("--interval does not apply with --once (one cycle, then exit).");
+  }
 
   return {
     command,
@@ -119,8 +147,11 @@ export function parseCliArgs(argv: readonly string[]): ParsedArgs {
       verbose: values.verbose === true,
     },
     help: values.help === true,
+    interval,
     limit,
+    once: values.once === true,
     positionals: rest,
+    stateFile,
     status,
     tx: values.tx,
     version: values.version === true,

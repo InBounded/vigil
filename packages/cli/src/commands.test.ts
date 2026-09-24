@@ -183,18 +183,46 @@ describe("vigil rules and vigil explain", () => {
   });
 });
 
-describe("vigil watch", () => {
-  it("says it arrives in a later version (exit 3), and --help says so without calling it broken", async () => {
-    const result = await run(["watch", BATCH_MULTISIG]);
-    expect(result.code).toBe(3);
-    expect(result.stderr).toContain("vigil watch arrives in a later version of Vigil.");
+describe("vigil watch: usage and help", () => {
+  it("--help describes the command, its options and the alert variables", async () => {
     const help = await run(["watch", "--help"]);
     expect(help.code).toBe(0);
-    expect(help.stdout).toContain("arrives in a later");
+    for (const text of [
+      "--interval <S>",
+      "--once",
+      "--state-file <path>",
+      "VIGIL_DISCORD_WEBHOOK",
+      "VIGIL_TELEGRAM_BOT_TOKEN",
+      "VIGIL_TELEGRAM_CHAT_ID",
+      "VIGIL_WEB_URL",
+      "XDG_STATE_HOME",
+    ]) {
+      expect(help.stdout).toContain(text);
+    }
+    expect(help.stdout).not.toContain("later version");
     const overview = await run(["--help"]);
-    expect(overview.stdout).toMatch(
-      /vigil watch <multisig> +Watch for new proposals and alert \(arrives in a\s+later version\)/,
-    );
+    expect(overview.stdout).toMatch(/vigil watch <multisig> +Alert on new proposals/);
+  });
+
+  it.each([
+    [["watch"], "Missing the multisig address."],
+    [["watch", BATCH_MULTISIG, "extra"], "Too many arguments for vigil watch."],
+    [["watch", BATCH_MULTISIG, "--interval", "14"], "--interval"],
+    [["watch", BATCH_MULTISIG, "--interval", "86401"], "--interval"],
+    [
+      ["watch", BATCH_MULTISIG, "--once", "--interval", "60"],
+      "--interval does not apply with --once",
+    ],
+    [["watch", BATCH_MULTISIG, "--state-file", " "], "--state-file needs a path."],
+    [["list", BATCH_MULTISIG, "--once"], "--once only applies to vigil watch."],
+    [
+      ["decode", BATCH_MULTISIG, "1", "--interval", "60"],
+      "--interval only applies to vigil watch.",
+    ],
+  ])("%j is a usage error (exit 3)", async (argv, message) => {
+    const result = await run(argv);
+    expect(result.code).toBe(3);
+    expect(result.stderr).toContain(message);
   });
 });
 

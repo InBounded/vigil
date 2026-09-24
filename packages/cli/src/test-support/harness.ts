@@ -7,6 +7,9 @@ import type { RpcClient } from "@vigil-sol/core";
 import type { CliEnvironment } from "../environment.js";
 import { fixtureMode } from "../fixture-mode.js";
 import { main } from "../main.js";
+import { nodeStateFiles } from "../node-environment.js";
+import type { StateFiles } from "../watch/state-file.js";
+import { fetchNotifierHttp, type NotifierHttp } from "../watch/transport.js";
 
 export const FIXTURES = fileURLToPath(new URL("../../../../fixtures/cli/", import.meta.url));
 
@@ -43,6 +46,14 @@ export interface RunOptions {
   readonly columns?: number;
   /** Replaces the fixture RPC (e.g. one that fails). */
   readonly rpc?: (url: string) => RpcClient;
+  /** Watch state storage (default: the real files, under a test's temporary directory). */
+  readonly files?: StateFiles;
+  readonly homeDir?: string;
+  /** Default: the real transport (tests point it at a local server). */
+  readonly notifierHttp?: NotifierHttp;
+  /** Called instead of waiting; the default returns at once. */
+  readonly sleep?: (ms: number, signal?: AbortSignal) => Promise<void>;
+  readonly shutdown?: AbortSignal;
 }
 
 export interface RunResult {
@@ -75,6 +86,11 @@ export async function run(argv: readonly string[], options: RunOptions = {}): Pr
       return fixtures.createRpc(url);
     },
     env,
+    files: options.files ?? nodeStateFiles,
+    homeDir: options.homeDir,
+    notifierHttp: () => options.notifierHttp ?? fetchNotifierHttp(env),
+    ...(options.shutdown === undefined ? {} : { shutdown: options.shutdown }),
+    sleep: options.sleep ?? (() => Promise.resolve()),
     readStdin: (maxBytes) => {
       const text = options.stdin ?? "";
       return Buffer.byteLength(text) > maxBytes

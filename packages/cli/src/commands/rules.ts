@@ -79,11 +79,3 @@ export function explainCommand(args: ParsedArgs, runtime: Runtime): number {
   );
   return EXIT.ok;
 }
-
-/** Phase 8. Registered now so scripts and `--help` already know the name. */
-export function watchCommand(runtime: Runtime): number {
-  runtime.err(
-    "vigil watch arrives in a later version of Vigil.\n  → For now, run vigil list <multisig> on a schedule (it exits 2 on a critical finding).\n",
-  );
-  return EXIT.error;
-}
