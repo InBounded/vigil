@@ -4,7 +4,8 @@
     "noEmit": true,
     "rootDir": "../..",
     "paths": {
-      "@vigil-sol/core": ["../core/src/index.ts"]
+      "@vigil-sol/core": ["../core/src/index.ts"],
+      "@vigil-sol/core/node": ["../core/src/node.ts"]
     }
   },
   "include": ["src"],

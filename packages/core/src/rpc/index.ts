@@ -11,7 +11,6 @@ export type {
   FixtureFile,
   FixtureTransactionRecord,
 } from "./fixture-file.js";
-export { loadFixtureFile, loadFixtureFiles } from "./fixture-file.js";
 export type { KitRpcClientOptions } from "./kit-client.js";
 export { KitRpcClient } from "./kit-client.js";
 export { redactRpcUrl } from "./redact.js";

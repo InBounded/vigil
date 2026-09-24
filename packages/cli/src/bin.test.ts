@@ -7,7 +7,7 @@ import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { loadFixtureFile } from "@vigil-sol/core";
+import { loadFixtureFile } from "@vigil-sol/core/node";
 import { beforeAll, describe, expect, it } from "vitest";
 import { BATCH_MULTISIG, FIXTURES, fixtureEnv, UPGRADE_MULTISIG } from "./test-support/harness.js";
 

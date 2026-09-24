@@ -6,9 +6,9 @@ import {
   type HttpClient,
   type HttpGetOptions,
   type HttpResponse,
-  loadFixtureFiles,
   type RpcClient,
 } from "@vigil-sol/core";
+import { loadFixtureFiles } from "@vigil-sol/core/node";
 
 /**
  * Test-only: when `NODE_ENV` is `test` and `VIGIL_TEST_FIXTURES` lists fixture files (separated by

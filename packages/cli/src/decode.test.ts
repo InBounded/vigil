@@ -3,13 +3,8 @@
  * analysis live (`fixtures/cli/`, see docs/DECISIONS.md). Balances are current at capture time.
  */
 import { address } from "@solana/kit";
-import {
-  analyzeProposal,
-  analyzeRawTransaction,
-  CATALOGS,
-  loadFixtureFile,
-  serializeReport,
-} from "@vigil-sol/core";
+import { analyzeProposal, analyzeRawTransaction, CATALOGS, serializeReport } from "@vigil-sol/core";
+import { loadFixtureFile } from "@vigil-sol/core/node";
 import { describe, expect, it } from "vitest";
 import { fixtureMode } from "./fixture-mode.js";
 import {

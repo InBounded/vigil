@@ -5,7 +5,8 @@
  * contain any part of a key. Only the host may be shown.
  */
 import { SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR, SolanaError } from "@solana/kit";
-import { FixtureRpcClient, loadFixtureFile } from "@vigil-sol/core";
+import { FixtureRpcClient } from "@vigil-sol/core";
+import { loadFixtureFile } from "@vigil-sol/core/node";
 import { describe, expect, it } from "vitest";
 import { Redactor } from "./secrets.js";
 import {

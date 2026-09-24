@@ -5,9 +5,17 @@ import { defineProject } from "vitest/config";
 // order is only enforced by `pnpm build`). The spawn test runs the built binary instead.
 export default defineProject({
   resolve: {
-    alias: {
-      "@vigil-sol/core": fileURLToPath(new URL("../core/src/index.ts", import.meta.url)),
-    },
+    // Exact matches: a plain "@vigil-sol/core" key would also rewrite "@vigil-sol/core/node".
+    alias: [
+      {
+        find: /^@vigil-sol\/core$/,
+        replacement: fileURLToPath(new URL("../core/src/index.ts", import.meta.url)),
+      },
+      {
+        find: /^@vigil-sol\/core\/node$/,
+        replacement: fileURLToPath(new URL("../core/src/node.ts", import.meta.url)),
+      },
+    ],
   },
   test: { name: "@vigil-sol/cli" },
 });
