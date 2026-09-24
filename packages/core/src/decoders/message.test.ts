@@ -1,7 +1,6 @@
 import type { Address } from "@solana/kit";
 import {
   AddressLookupTableAccount,
-  Keypair,
   PublicKey,
   SystemProgram,
   TransactionInstruction,
@@ -15,7 +14,9 @@ import { DecodeError } from "./errors.js";
 import type { LookupTableEntry } from "./lookup-tables.js";
 import { parseSquadsTransactionMessage } from "./message.js";
 
-const key = (seed: number) => Keypair.fromSeed(new Uint8Array(32).fill(seed)).publicKey;
+// Distinct, deterministic 32-byte addresses. Built from bytes, not from a keypair: no key material
+// is created outside scripts/ (signing-boundary.test.ts).
+const key = (seed: number) => new PublicKey(new Uint8Array(32).fill(seed));
 const asAddress = (publicKey: PublicKey) => publicKey.toBase58() as Address;
 
 const vault = key(1);

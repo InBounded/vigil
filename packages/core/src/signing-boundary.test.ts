@@ -41,15 +41,8 @@ const SIGNING = [
 
 const SIGNING_PACKAGES = /from\s+["'](@solana\/web3\.js|@sqds\/multisig|@solana\/signers)["']/;
 
-/**
- * Existing files that create key material but never sign, allowed by name with the reason. A new
- * entry needs the maintainer's approval and a line in docs/DECISIONS.md.
- */
-const DOCUMENTED_EXCEPTIONS: Readonly<Record<string, string>> = {
-  "packages/core/src/signing-boundary.test.ts": "this test: it lists the patterns it looks for",
-  "packages/core/src/decoders/message.test.ts":
-    "Phase 3A test: Keypair.fromSeed on a constant seed, only .publicKey is used, to build deterministic addresses; never signs or sends",
-};
+/** This file lists the patterns it looks for, so it is the one file not scanned. No other exception. */
+const SELF = fileURLToPath(import.meta.url);
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -85,11 +78,11 @@ function hits(text: string): string[] {
 
 describe("signing boundary", () => {
   it("no signing, sending or key-creation code in core, cli, web or the proxy", () => {
-    const files = productFiles();
+    const files = productFiles().filter((file) => file !== SELF);
     expect(files.length).toBeGreaterThan(100);
     const offenders = files
       .map((file) => ({ file: relative(file), found: hits(readFileSync(file, "utf8")) }))
-      .filter(({ file, found }) => found.length > 0 && DOCUMENTED_EXCEPTIONS[file] === undefined);
+      .filter(({ found }) => found.length > 0);
     expect(offenders).toEqual([]);
   });
 
