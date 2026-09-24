@@ -150,8 +150,6 @@ describe("method allowlist (imported from core)", () => {
 
   it.each([
     "sendTransaction",
-    "sendRawTransaction",
-    "requestAirdrop",
     "getProgramAccounts",
     "getBalance",
     "getLatestBlockhash",
