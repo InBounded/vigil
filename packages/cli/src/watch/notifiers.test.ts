@@ -97,7 +97,15 @@ describe("alert content from a real report with hostile on-chain text", () => {
     const text = alertPlainText(alert, "en", TELEGRAM_TEXT_LIMIT);
     expect(text).toContain("<script>");
     expect(text).toContain("pay USDC");
-    for (const invisible of ["\u202e", "\u200b", "\u2066", "\u2069", "\u200f", "\u2060", "\ufeff"]) {
+    for (const invisible of [
+      "\u202e",
+      "\u200b",
+      "\u2066",
+      "\u2069",
+      "\u200f",
+      "\u2060",
+      "\ufeff",
+    ]) {
       expect(text).not.toContain(invisible);
     }
     expect(text).not.toMatch(/\udb40\udc41/);
