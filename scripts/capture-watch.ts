@@ -17,89 +17,24 @@
  *   pnpm exec tsx scripts/capture-watch.ts --multisig <address> [--multisig …]
  *     [--interval 20] [--minutes 240] [--out watch] [--cluster mainnet]
  */
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { type Address, address } from "@solana/kit";
-import { analyzeProposal, rpcHostOf } from "../packages/core/src/analyze/index.js";
-import { systemClock } from "../packages/core/src/io/clock.js";
-import {
-  FetchHttpClient,
-  type HttpClient,
-  type HttpGetOptions,
-  type HttpResponse,
-} from "../packages/core/src/io/http.js";
-import { VERIFICATION_API, VerificationCache } from "../packages/core/src/programs/verification.js";
 import { KitRpcClient } from "../packages/core/src/rpc/kit-client.js";
-import type { RpcClient } from "../packages/core/src/rpc/types.js";
-import {
-  detectChanges,
-  PENDING_STATUSES,
-  type WatchEvent,
-  type WatchState,
-} from "../packages/core/src/watch/detect.js";
-import { readWatchSnapshot } from "../packages/core/src/watch/snapshot.js";
+import type { WatchState } from "../packages/core/src/watch/detect.js";
 import { watchStateToJson } from "../packages/core/src/watch/state.js";
-import { RecordingRpcClient, recordingToFixture } from "./lib/recording-rpc.js";
+import {
+  describeEvent,
+  fixturesDir,
+  type RecordedCycle,
+  recordCycle,
+  throttled,
+  writeCycleFixture,
+} from "./lib/watch-recording.js";
 
 const RPC_URLS: Record<string, string> = {
   devnet: "https://api.devnet.solana.com",
   mainnet: "https://api.mainnet-beta.solana.com",
 };
-
-class RecordingHttpClient implements HttpClient {
-  readonly responses: Record<string, HttpResponse> = {};
-  readonly #inner = new FetchHttpClient();
-
-  async get(url: string, options: HttpGetOptions): Promise<HttpResponse> {
-    const response = await this.#inner.get(url, options);
-    if (url.startsWith(VERIFICATION_API)) {
-      this.responses[url.slice(VERIFICATION_API.length)] = response;
-    }
-    return response;
-  }
-}
-
-/** Spaces calls out so the public RPC's rate limits are respected. */
-function throttled(inner: RpcClient, gapMs: number): RpcClient {
-  let next = 0;
-  const wait = async () => {
-    const now = Date.now();
-    const at = Math.max(now, next);
-    next = at + gapMs;
-    if (at > now) {
-      await new Promise((resolve) => setTimeout(resolve, at - now));
-    }
-  };
-  const go = <T>(call: () => Promise<T>): Promise<T> => wait().then(call);
-  return {
-    getAccountInfo: (...a) => go(() => inner.getAccountInfo(...a)),
-    getGenesisHash: () => go(() => inner.getGenesisHash()),
-    getMultipleAccounts: (...a) => go(() => inner.getMultipleAccounts(...a)),
-    getSignaturesForAddress: (...a) => go(() => inner.getSignaturesForAddress(...a)),
-    getSlot: (...a) => go(() => inner.getSlot(...a)),
-    getTransaction: (...a) => go(() => inner.getTransaction(...a)),
-    limitations: () => inner.limitations(),
-    simulateTransaction: (...a) => go(() => inner.simulateTransaction(...a)),
-  };
-}
-
-/** The CLI's rule (packages/cli/src/commands/watch.ts `analyse`). */
-function analysed(event: WatchEvent): boolean {
-  return event.kind === "new-proposal"
-    ? event.transactionKind !== null &&
-        !event.isStale &&
-        event.status !== "Closed" &&
-        PENDING_STATUSES.has(event.status)
-    : event.to === "Approved";
-}
-
-function describe(event: WatchEvent): string {
-  return event.kind === "new-proposal"
-    ? `#${event.transactionIndex} new (${event.status}${event.initial ? ", initial" : ""})`
-    : `#${event.transactionIndex} ${event.from} → ${event.to}`;
-}
 
 interface Watched {
   readonly multisig: Address;
@@ -122,17 +57,11 @@ async function main(): Promise<void> {
     },
   });
   const url = RPC_URLS[values.cluster];
-  if (url === undefined || !/^[a-z-]+$/.test(values.out)) {
-    throw new Error("unknown --cluster or bad --out");
+  if (url === undefined) {
+    throw new Error("unknown --cluster");
   }
   const live = throttled(new KitRpcClient(url), 300);
-  const outDir = path.join(
-    path.dirname(fileURLToPath(import.meta.url)),
-    "..",
-    "fixtures",
-    values.out,
-  );
-  await mkdir(outDir, { recursive: true });
+  const outDir = fixturesDir(values.out);
   const watched: Watched[] = (values.multisig ?? []).map((m) => ({
     cycle: 0,
     multisig: address(m),
@@ -146,72 +75,38 @@ async function main(): Promise<void> {
   while (Date.now() < deadline) {
     const started = Date.now();
     for (const w of watched) {
-      const rpc = new RecordingRpcClient(live);
-      const http = new RecordingHttpClient();
-      const deps = {
-        clock: systemClock,
-        http,
-        rpc,
-        rpcHost: rpcHostOf(url),
-        verificationCache: new VerificationCache(systemClock),
-      };
-      let changes: ReturnType<typeof detectChanges>;
+      let cycle: RecordedCycle;
       try {
-        const snapshot = await readWatchSnapshot(rpc, w.multisig, w.state);
-        changes = detectChanges(snapshot, w.state);
+        cycle = await recordCycle(live, url, w.multisig, w.state);
       } catch (error) {
         console.warn(
           `${w.prefix}: read failed (${error instanceof Error ? error.name : "?"}), retrying next round`,
         );
         continue;
       }
-      const before = JSON.stringify(w.state === undefined ? null : watchStateToJson(w.state));
-      const after = JSON.stringify(watchStateToJson(changes.nextState));
-      const reports: string[] = [];
-      for (const event of changes.events) {
-        if (analysed(event)) {
-          try {
-            const report = await analyzeProposal(
-              deps,
-              { multisig: w.multisig, transactionIndex: event.transactionIndex },
-              { rules: { historyDepth: 0 }, simulate: true, verification: true },
-            );
-            reports.push(`#${event.transactionIndex} ${report.verdict}`);
-          } catch (error) {
-            reports.push(
-              `#${event.transactionIndex} analysis failed (${error instanceof Error ? error.message : "?"})`,
-            );
-          }
-        }
-        if (w.cycle > 0) {
-          const index = event.transactionIndex;
-          const seen = w.steps.get(index) ?? new Set<string>();
+      const { changes, reports } = cycle;
+      if (w.cycle > 0) {
+        for (const event of changes.events) {
+          const seen = w.steps.get(event.transactionIndex) ?? new Set<string>();
           seen.add(event.kind === "new-proposal" ? "new" : event.to);
-          w.steps.set(index, seen);
+          w.steps.set(event.transactionIndex, seen);
         }
       }
+      const before = JSON.stringify(w.state === undefined ? null : watchStateToJson(w.state));
+      const after = JSON.stringify(watchStateToJson(changes.nextState));
       if (before !== after || changes.events.length > 0) {
         const name = `${w.prefix}-${String(w.written).padStart(3, "0")}`;
-        const capturedAt = new Date().toISOString();
-        const fixture = {
-          capturedAt,
-          cluster: values.cluster,
-          contextSlot: rpc.contextSlot.toString(),
-          description: `vigil watch cycle ${w.cycle} of multisig ${w.multisig} (written as step ${w.written}); events: ${changes.events.map(describe).join("; ") || "none (silent state change)"}`,
-          ...recordingToFixture(rpc),
-        };
-        const bigints = (_k: string, v: unknown) => (typeof v === "bigint" ? v.toString() : v);
-        await writeFile(
-          path.join(outDir, `${name}.json`),
-          `${JSON.stringify(fixture, bigints, 2)}\n`,
-        );
-        await writeFile(
-          path.join(outDir, `${name}.http.json`),
-          `${JSON.stringify({ capturedAt, description: `Verification API answers recorded with ${name}.json`, endpoint: VERIFICATION_API, responses: http.responses }, null, 2)}\n`,
+        const events = changes.events.map(describeEvent).join("; ");
+        await writeCycleFixture(
+          outDir,
+          name,
+          values.cluster,
+          `vigil watch cycle ${w.cycle} of multisig ${w.multisig} (written as step ${w.written}); events: ${events || "none (silent state change)"}`,
+          cycle,
         );
         w.written++;
         console.log(
-          `${capturedAt} ${name}: ${changes.events.map(describe).join("; ") || "silent change"} ${reports.join(", ")}`,
+          `${new Date().toISOString()} ${name}: ${events || "silent change"} ${reports.join(", ")}`,
         );
       }
       w.state = changes.nextState;
