@@ -1,0 +1,15 @@
+{
+  "capturedAt": "2026-09-24T06:14:39.372Z",
+  "description": "Verification API answers recorded with 6TXHbBaU-000.json",
+  "endpoint": "https://verify.osec.io/status/",
+  "responses": {
+    "Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo": {
+      "status": 200,
+      "text": "{\"is_verified\":false,\"message\":\"On chain program not verified\",\"on_chain_hash\":\"9874534bcabc56d8aa2bfeb7c41c8affaac3cd4c2c088d33fa9b120b26f9eba9\",\"executable_hash\":\"\",\"repo_url\":\"\",\"commit\":\"\",\"last_verified_at\":null,\"is_frozen\":true,\"is_closed\":false}"
+    },
+    "FsfhJBN5AcgYmoR3yArGtjmu8eLeYVoexVkatA83HiFp": {
+      "status": 200,
+      "text": "{\"is_verified\":false,\"message\":\"On chain program not verified\",\"on_chain_hash\":\"\",\"executable_hash\":\"\",\"repo_url\":\"\",\"commit\":\"\",\"last_verified_at\":null,\"is_frozen\":false,\"is_closed\":false}"
+    }
+  }
+}
