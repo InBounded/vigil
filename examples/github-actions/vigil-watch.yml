@@ -1,0 +1,76 @@
+# Vigil watch: alerts your team when a new Squads v4 proposal appears (before anyone approves)
+# and when a proposal is approved (ready to execute), executed, rejected or cancelled.
+#
+# Copy this file to .github/workflows/vigil-watch.yml in a repository you control, then set:
+#   Settings → Secrets and variables → Actions
+#     Variables:  VIGIL_MULTISIG          the multisig address (required)
+#                 VIGIL_WEB_URL           address of a Vigil web app, for links (optional)
+#     Secrets:    VIGIL_RPC_URL           your RPC endpoint; may contain an API key (optional,
+#                                         default: the public mainnet RPC, heavily rate-limited)
+#                 VIGIL_DISCORD_WEBHOOK   Discord webhook URL (optional)
+#                 VIGIL_TELEGRAM_BOT_TOKEN and VIGIL_TELEGRAM_CHAT_ID (optional, both or neither)
+# and replace X.Y.Z below with a published @vigil-sol/cli version.
+#
+# Read the README section "Watching with GitHub Actions" first: scheduled runs can start late,
+# and GitHub disables scheduled workflows in public repositories after 60 days without activity.
+name: Vigil watch
+
+on:
+  schedule:
+    # Every 10 minutes, off the top of the hour (GitHub delays scheduled runs under high load,
+    # notably at the start of every hour).
+    - cron: "3-59/10 * * * *"
+  workflow_dispatch:
+
+# The job needs no GITHUB_TOKEN permission: it only reads the chain and posts alerts.
+permissions: {}
+
+# Never two runs at once: both would read the same state and could send an alert twice.
+concurrency:
+  group: vigil-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      VIGIL_CLI_VERSION: "X.Y.Z" # placeholder: replace with a published version (exact, no range)
+      STATE_KEY: vigil-watch-${{ vars.VIGIL_MULTISIG }}
+    steps:
+      # The state (what was already alerted) lives in the Actions cache. Caches are immutable,
+      # so every run saves under a new key and the next run restores the newest by prefix.
+      - name: Restore watch state
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .vigil-state
+          key: ${{ env.STATE_KEY }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ${{ env.STATE_KEY }}-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+
+      - name: Check the multisig and send alerts
+        env:
+          MULTISIG: ${{ vars.VIGIL_MULTISIG }}
+          VIGIL_RPC_URL: ${{ secrets.VIGIL_RPC_URL }}
+          VIGIL_DISCORD_WEBHOOK: ${{ secrets.VIGIL_DISCORD_WEBHOOK }}
+          VIGIL_TELEGRAM_BOT_TOKEN: ${{ secrets.VIGIL_TELEGRAM_BOT_TOKEN }}
+          VIGIL_TELEGRAM_CHAT_ID: ${{ secrets.VIGIL_TELEGRAM_CHAT_ID }}
+          VIGIL_WEB_URL: ${{ vars.VIGIL_WEB_URL }}
+        run: |
+          npx --yes "@vigil-sol/cli@${VIGIL_CLI_VERSION}" watch "$MULTISIG" \
+            --once --state-file .vigil-state/state.json
+
+      # Saved even when the step above failed (exit 3: RPC unreachable or an alert not
+      # delivered): the state then holds the undelivered alerts, retried on the next run, and
+      # nothing already sent is sent again.
+      - name: Save watch state
+        if: always() && hashFiles('.vigil-state/state.json') != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .vigil-state
+          key: ${{ env.STATE_KEY }}-${{ github.run_id }}-${{ github.run_attempt }}
