@@ -116,6 +116,7 @@ export interface TestEnvironment {
 export async function fixtureEnvironment(
   name: FixtureName,
   settings: Settings = FIXTURE_SETTINGS,
+  proxyUrl = "",
 ): Promise<TestEnvironment> {
   const data = await loadFixtureFile(`${FIXTURES}${FILES[name].rpc}`);
   const http = recordedHttp(name);
@@ -135,6 +136,7 @@ export async function fixtureEnvironment(
         },
       }),
       build: "hosted",
+      proxyUrl,
       deleteLocalData: async () => {
         store.clear();
         return true;

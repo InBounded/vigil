@@ -1,12 +1,15 @@
+import { PROXY_URL } from "../analysis/endpoints.js";
 import { browserSettingsStore, browserStorage } from "../settings/storage.js";
 import type { AnalysisEnvironment, WebEnvironment } from "./environment.js";
 
 /**
  * The real environment: localStorage, the clipboard, and (lazily) live RPC/HTTP and IndexedDB.
- * `build` defaults to the one this bundle was built as; tests pass it to cover each build.
+ * `build` and `proxyUrl` default to what this bundle was built with; tests pass them to cover
+ * each build. The offline file never uses the proxy (its origin, `null`, is refused there).
  */
 export function browserEnvironment(
   build: WebEnvironment["build"] = __VIGIL_BUILD__,
+  proxyUrl: string = PROXY_URL,
 ): WebEnvironment {
   const settingsStore = browserSettingsStore(browserStorage(), { persistRpc: build !== "offline" });
   let analysis: Promise<AnalysisEnvironment & { deleteCache(): Promise<boolean> }> | undefined;
@@ -26,6 +29,7 @@ export function browserEnvironment(
     async writeClipboard(text) {
       await navigator.clipboard.writeText(text);
     },
+    proxyUrl: build === "offline" ? "" : proxyUrl,
     settingsStore,
   };
 }

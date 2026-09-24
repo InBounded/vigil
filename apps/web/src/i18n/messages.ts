@@ -78,6 +78,8 @@ const en = {
   "error.TRANSACTION_INVALID": "The transaction stored for this proposal could not be read.",
   "error.TRANSACTION_NOT_FOUND": "This multisig has no transaction with that number.",
   "error.UNEXPECTED": "The analysis stopped unexpectedly. Nothing was concluded.",
+  "error.proxyHint":
+    "You are using the shared Vigil proxy, which limits how many requests each visitor can make.",
   "error.retry": "Try again",
   "error.title": "Analysis not possible",
   "field.approvals": "Approvals",
@@ -214,6 +216,13 @@ const en = {
     "Read-only analysis by Vigil {version}: nothing was signed or sent. Not a guarantee.",
   "report.title.proposal": "Proposal #{index} ({kind})",
   "report.whyItMatters": "Why it matters",
+  "rpc.inUse.own": "RPC endpoint: your own ({host}).",
+  "rpc.inUse.proxy": "RPC endpoint: the shared Vigil proxy ({host}).",
+  "rpc.inUse.public": "RPC endpoint: the public devnet endpoint ({host}).",
+  "rpc.proxy.historyCapped":
+    "Through the proxy, history checks read at most {max} past transactions (your setting: {depth}).",
+  "rpc.proxy.limits": "It limits how many requests each visitor can make.",
+  "rpc.proxy.setOwn": "Set your own RPC in settings.",
   "settings.cluster": "Default network",
   "settings.crossCheck.devnet": "Devnet cross-check RPC endpoint (optional)",
   "settings.crossCheck.mainnet": "Mainnet cross-check RPC endpoint (optional)",
@@ -260,6 +269,8 @@ const en = {
   "settings.rpc.mainnet": "Mainnet RPC endpoint",
   "settings.rpc.mainnet.help":
     "Required for mainnet: the public mainnet endpoint refuses requests from web pages.",
+  "settings.rpc.mainnet.helpProxy":
+    "Optional. Empty: the shared Vigil proxy, which limits how many requests each visitor can make. Your own endpoint always comes first.",
   "settings.save": "Save settings",
   "settings.saved": "Settings saved.",
   "settings.section.analysis": "Analysis",

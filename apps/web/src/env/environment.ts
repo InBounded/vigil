@@ -21,4 +21,6 @@ export interface WebEnvironment {
   /** Loaded on first use, so the start page never downloads the analysis engine. */
   readonly analysis: () => Promise<AnalysisEnvironment>;
   readonly build: "hosted" | "ghpages" | "offline";
+  /** The Vigil RPC proxy URL for mainnet, or `""` when this build has none (see `endpoints.ts`). */
+  readonly proxyUrl: string;
 }

@@ -8,7 +8,12 @@ import {
   VerificationCache,
 } from "@vigil-sol/core";
 import { useEffect, useId, useRef, useState } from "react";
-import { type Endpoints, resolveEndpoints } from "../analysis/endpoints.js";
+import {
+  type ChosenRpc,
+  chooseRpc,
+  type Endpoints,
+  resolveEndpoints,
+} from "../analysis/endpoints.js";
 import {
   isPending,
   loadMultisigOverview,
@@ -21,6 +26,7 @@ import { useAnalysis } from "../analysis/use-analysis.js";
 import { Address, ClusterContext, TextWithAddresses } from "../components/Address.js";
 import { ErrorPanel } from "../components/ErrorPanel.js";
 import { NeedRpc } from "../components/NeedRpc.js";
+import { RpcInUse } from "../components/RpcInUse.js";
 import { SeverityBadge, VERDICT_SYMBOL } from "../components/Severity.js";
 import { useEnvironment } from "../env/context.js";
 import { useMessages } from "../i18n/locale.js";
@@ -40,19 +46,23 @@ type RowState =
 
 export default function MultisigScreen({ route }: { readonly route: MultisigRoute }) {
   const { settings } = useSettings();
-  const endpoints = resolveEndpoints(settings, route.cluster);
-  if (!endpoints.ok) {
+  const { proxyUrl } = useEnvironment();
+  const endpoints = resolveEndpoints(settings, route.cluster, proxyUrl);
+  const rpc = chooseRpc(settings, route.cluster, proxyUrl);
+  if (!endpoints.ok || rpc === undefined) {
     return <NeedRpc />;
   }
-  return <MultisigRunner route={route} endpoints={endpoints} />;
+  return <MultisigRunner route={route} endpoints={endpoints} rpc={rpc} />;
 }
 
 function MultisigRunner({
   route,
   endpoints,
+  rpc,
 }: {
   readonly route: MultisigRoute;
   readonly endpoints: Extract<Endpoints, { ok: true }>;
+  readonly rpc: ChosenRpc;
 }) {
   const environment = useEnvironment();
   const { settings } = useSettings();
@@ -86,21 +96,31 @@ function MultisigRunner({
     route.multisig,
     route.cluster,
     endpoints,
+    rpc.source,
     overview?.entries,
   );
   if (state.status === "error") {
-    return <ErrorPanel error={state.error} onRetry={rerun} />;
+    return (
+      <>
+        <RpcInUse rpc={rpc} historyDepth={settings.historyDepth} />
+        <ErrorPanel error={state.error} onRetry={rerun} viaProxy={rpc.source === "proxy"} />
+      </>
+    );
   }
   if (overview === undefined) {
     return (
-      <p className="loading" role="status">
-        {m("step.read")}…
-      </p>
+      <>
+        <RpcInUse rpc={rpc} historyDepth={settings.historyDepth} />
+        <p className="loading" role="status">
+          {m("step.read")}…
+        </p>
+      </>
     );
   }
   return (
     <ClusterContext value={overview.cluster}>
       <article className="multisig">
+        <RpcInUse rpc={rpc} historyDepth={settings.historyDepth} />
         <h1>{m("multisig.title")}</h1>
         <p>
           <Address address={route.multisig} links />
@@ -130,6 +150,7 @@ function useProgressiveAnalysis(
   multisig: AddressType,
   cluster: WebCluster,
   endpoints: Extract<Endpoints, { ok: true }>,
+  rpcSource: ChosenRpc["source"],
   entries: readonly SquadsProposalListEntry[] | undefined,
 ): ReadonlyMap<bigint, RowState> {
   const environment = useEnvironment();
@@ -139,8 +160,8 @@ function useProgressiveAnalysis(
     map: new Map(),
   });
   // What the loop reads, refreshed on every render; only `key` and the pending list restart it.
-  const context = useRef({ cluster, endpoints, environment, multisig, rows, settings });
-  context.current = { cluster, endpoints, environment, multisig, rows, settings };
+  const context = useRef({ cluster, endpoints, environment, multisig, rows, rpcSource, settings });
+  context.current = { cluster, endpoints, environment, multisig, rows, rpcSource, settings };
   const pending = (entries ?? [])
     .filter(isPending)
     .map((entry) => entry.transactionIndex)
@@ -160,7 +181,7 @@ function useProgressiveAnalysis(
       }
     };
     (async () => {
-      const { cluster, endpoints, environment, multisig, settings } = context.current;
+      const { cluster, endpoints, environment, multisig, rpcSource, settings } = context.current;
       const analysis = await environment.analysis();
       const deps = analysisDependencies(analysis, endpoints, new VerificationCache(analysis.clock));
       for (const index of pending.split(",").map((text) => BigInt(text))) {
@@ -177,7 +198,7 @@ function useProgressiveAnalysis(
           const report = await analyzeProposal(
             deps,
             { multisig, transactionIndex: index },
-            analysisOptions(settings, cluster),
+            analysisOptions(settings, cluster, undefined, rpcSource),
           );
           set(index, { report, status: "done" });
         } catch {

@@ -117,7 +117,7 @@ function fromForm(
 export default function SettingsScreen() {
   const { m } = useMessages();
   const { settings, update } = useSettings();
-  const { settingsStore } = useEnvironment();
+  const { settingsStore, proxyUrl } = useEnvironment();
   const [form, setForm] = useState<FormValues>(() => toForm(settings));
   const [errors, setErrors] = useState<FieldErrors>({});
   const [status, setStatus] = useState<MessageKey | undefined>(undefined);
@@ -199,7 +199,11 @@ export default function SettingsScreen() {
               ))}
             </select>
           </div>
-          {urlField("rpcMainnet", "settings.rpc.mainnet", "settings.rpc.mainnet.help")}
+          {urlField(
+            "rpcMainnet",
+            "settings.rpc.mainnet",
+            proxyUrl === "" ? "settings.rpc.mainnet.help" : "settings.rpc.mainnet.helpProxy",
+          )}
           {urlField("rpcDevnet", "settings.rpc.devnet", "settings.rpc.devnet.help")}
           {urlField("crossMainnet", "settings.crossCheck.mainnet", "settings.crossCheck.help")}
           {urlField("crossDevnet", "settings.crossCheck.devnet", "settings.crossCheck.help")}

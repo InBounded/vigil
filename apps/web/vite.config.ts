@@ -6,6 +6,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
 import { cspFor, injectCspMeta, inlineBlocks, OFFLINE_FILE_PREFIX } from "./scripts/csp.js";
+import { proxyUrlFromEnv } from "./scripts/proxy-url.js";
 
 /**
  * Three builds from one source (see docs/DECISIONS.md, Phase 7):
@@ -36,6 +37,10 @@ export default defineConfig(({ mode }) => {
       __VIGIL_VERSION__: JSON.stringify(version),
       __VIGIL_COMMIT__: JSON.stringify(gitCommit()),
       __VIGIL_BUILD__: JSON.stringify(offline ? "offline" : ghpages ? "ghpages" : "hosted"),
+      // The offline file never uses the proxy: its origin is `null`, which the proxy refuses.
+      __VIGIL_PROXY_URL__: JSON.stringify(
+        offline ? "" : proxyUrlFromEnv(process.env.VIGIL_PROXY_URL),
+      ),
     },
     plugins: [
       react(),

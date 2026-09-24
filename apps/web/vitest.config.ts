@@ -6,6 +6,8 @@ export default defineProject({
   define: {
     __VIGIL_BUILD__: JSON.stringify("hosted"),
     __VIGIL_COMMIT__: JSON.stringify("test"),
+    // Tests pass the proxy URL explicitly where it matters.
+    __VIGIL_PROXY_URL__: JSON.stringify(""),
     __VIGIL_VERSION__: JSON.stringify("0.0.0-test"),
   },
   plugins: [react()],

@@ -12,12 +12,21 @@ import type { AnalysisEnvironment } from "../env/environment.js";
 import type { WebCluster } from "../lib/routes.js";
 import type { Settings } from "../settings/settings.js";
 import { parseAmountSetting, THRESHOLD_ASSETS } from "../settings/thresholds.js";
+import type { RpcSource } from "./endpoints.js";
 
-/** The analysis options a user's settings stand for, on one network. */
+/**
+ * Most past transactions one history check may read through the Vigil proxy: the proxy refuses
+ * `getSignaturesForAddress` with a `limit` above 100 (`apps/rpc-proxy/src/policy.ts`), and core
+ * reads the history in one call.
+ */
+export const PROXY_MAX_HISTORY_DEPTH = 100;
+
+/** The analysis options a user's settings stand for, on one network, through one endpoint. */
 export function analysisOptions(
   settings: Settings,
   cluster: WebCluster,
   onProgress?: (step: AnalysisStep) => void,
+  rpcSource?: RpcSource,
 ): AnalysisOptions {
   const known = new Map<Address, string>(
     settings.knownAddresses.map((entry) => [entry.address, entry.label]),
@@ -41,7 +50,11 @@ export function analysisOptions(
   return {
     ...(onProgress === undefined ? {} : { onProgress }),
     rules: {
-      historyDepth: settings.historyDepth,
+      // Capped through the proxy, and said so on the page (`RpcInUse`).
+      historyDepth:
+        rpcSource === "proxy"
+          ? Math.min(settings.historyDepth, PROXY_MAX_HISTORY_DEPTH)
+          : settings.historyDepth,
       knownAddresses: known,
       largeTransferAbsolute: absolute,
       largeTransferPercent: settings.largeTransferPercent,
