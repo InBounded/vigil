@@ -53,4 +53,22 @@ describe("IndexedDbIdlCache", () => {
     await expect(cache.set(key(1), "{}")).resolves.toBeUndefined();
     await expect(cache.get(key(1))).resolves.toBeUndefined();
   });
+
+  it("deletes the whole database, even while this instance holds it open", async () => {
+    const factory = new IDBFactory();
+    const cache = new IndexedDbIdlCache({ indexedDB: factory });
+    await cache.set(key(1), "{}");
+    expect(await cache.deleteAll()).toBe(true);
+    expect(await new IndexedDbIdlCache({ indexedDB: factory }).get(key(1))).toBeUndefined();
+    // Usable again afterwards (reopens a fresh database).
+    await cache.set(key(2), "[]");
+    expect(await cache.get(key(2))).toBe("[]");
+  });
+
+  it("deleting without IndexedDB is a no-op", async () => {
+    // jsdom has no IndexedDB: the default factory is absent.
+    expect(globalThis.indexedDB).toBeUndefined();
+    const cache = new IndexedDbIdlCache();
+    expect(await cache.deleteAll()).toBe(true);
+  });
 });

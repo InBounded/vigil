@@ -1,12 +1,4 @@
-/**
- * Structurally identical to `IdlCache` in `@vigil/core` (`src/idl/fetch.ts`). Declared here rather
- * than imported because the web app is not wired to the core package until the web phase; see
- * `docs/DECISIONS.md`.
- */
-export interface IdlCacheStore {
-  get(key: string): Promise<string | undefined>;
-  set(key: string, json: string): Promise<void>;
-}
+import type { IdlCache } from "@vigil-sol/core";
 
 /** Total size the cache may use; the oldest-used entries are evicted beyond it. */
 export const DEFAULT_IDL_CACHE_BYTES = 20_000_000;
@@ -36,7 +28,7 @@ export interface IndexedDbIdlCacheOptions {
  * core has already validated, and core validates it again on every read. Any IndexedDB failure
  * (private browsing, quota, blocked) makes the cache behave as empty rather than break analysis.
  */
-export class IndexedDbIdlCache implements IdlCacheStore {
+export class IndexedDbIdlCache implements IdlCache {
   readonly #factory: IDBFactory | undefined;
   readonly #maxBytes: number;
   readonly #now: () => number;
@@ -93,6 +85,34 @@ export class IndexedDbIdlCache implements IdlCacheStore {
       await request(store.delete(entry.key));
       total -= entry.size;
     }
+  }
+
+  /**
+   * Deletes the whole cache database ("Delete all local data"). Closes this instance's connection
+   * first: an open connection would block the deletion. Resolves `false` if the browser refused.
+   */
+  async deleteAll(): Promise<boolean> {
+    const factory = this.#factory;
+    if (factory === undefined) {
+      return true;
+    }
+    const pending = this.#db;
+    this.#db = undefined;
+    try {
+      (await pending)?.close();
+    } catch {
+      // The database never opened: nothing to close.
+    }
+    return new Promise<boolean>((resolve) => {
+      try {
+        const deletion = factory.deleteDatabase(DB_NAME);
+        deletion.onsuccess = () => resolve(true);
+        deletion.onerror = () => resolve(false);
+        deletion.onblocked = () => resolve(false);
+      } catch {
+        resolve(false);
+      }
+    });
   }
 
   #open(): Promise<IDBDatabase> {
