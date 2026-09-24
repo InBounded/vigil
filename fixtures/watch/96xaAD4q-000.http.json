@@ -1,0 +1,19 @@
+{
+  "capturedAt": "2026-09-24T06:13:30.219Z",
+  "description": "Verification API answers recorded with 96xaAD4q-000.json",
+  "endpoint": "https://verify.osec.io/status/",
+  "responses": {
+    "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK": {
+      "status": 200,
+      "text": "{\"is_verified\":false,\"message\":\"On chain program not verified\",\"on_chain_hash\":\"a29612b069ee32863c15b491ba2201fc43a007e0db1fb67741ba62e767f66bdc\",\"executable_hash\":\"\",\"repo_url\":\"https://github.com/raydium-io/raydium-clmm/tree/119ed36bf9f33\",\"commit\":\"119ed36bf9f33\",\"last_verified_at\":null,\"is_frozen\":false,\"is_closed\":false}"
+    },
+    "swigypWHEksbC64pWKwah1WTeh9JXwx8H1rJHLdbQMB": {
+      "status": 200,
+      "text": "{\"is_verified\":false,\"message\":\"On chain program not verified\",\"on_chain_hash\":\"1da1c420a476f82d5d54f33cc16ffeeebabbaae37a2693a214767453a433f93b\",\"executable_hash\":\"\",\"repo_url\":\"https://github.com/anagrambuild/swig-wallet/tree/8f1f1e4b91f89381dcf84e852ea99faad3369435\",\"commit\":\"8f1f1e4b91f89381dcf84e852ea99faad3369435\",\"last_verified_at\":null,\"is_frozen\":false,\"is_closed\":false}"
+    },
+    "GY8CEvo6ofkDe1pb2kNYPZSvhrFRHwrxsNb5agsQzQjn": {
+      "status": 200,
+      "text": "{\"is_verified\":false,\"message\":\"On chain program not verified\",\"on_chain_hash\":\"\",\"executable_hash\":\"\",\"repo_url\":\"\",\"commit\":\"\",\"last_verified_at\":null,\"is_frozen\":false,\"is_closed\":false}"
+    }
+  }
+}

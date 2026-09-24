@@ -1,0 +1,16 @@
+{
+  "capturedAt": "2026-09-24T07:31:58.836Z",
+  "cluster": "mainnet",
+  "contextSlot": "449961779",
+  "description": "vigil watch cycle 49 of multisig B8HQPH3hKA1LbsWJuvbrGzEXYAhcbQeQQupv1qPU3Fp5 (written as step 4); events: #154 new (Closed)",
+  "genesisHash": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+  "accounts": {
+    "B8HQPH3hKA1LbsWJuvbrGzEXYAhcbQeQQupv1qPU3Fp5": {
+      "dataBase64": "4HR5ukShT+xjumAaz16V2S9vUvaIBjlPS/GlrpGG4G53yoCaaiVBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAmgAAAAAAAAAnAAAAAAAAAAEuIv4FreYx/mrksjHBfw4JTh3/B17eRXGrPfNnaidA9P8DAAAABZjOsVZc5mXjoghyst5QfoRAASk8ZT2apQgHHe6LHKsCY906+dPdE8Pfh9hNyfTRcQdPgfq9zjFdBBzIw7z2DW0Hw5Y4uup374bzLLVmglqUv7x1+0Q2SxC/fN2CUUlpddEH",
+      "executable": false,
+      "lamports": "2498640",
+      "owner": "SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf",
+      "space": "231"
+    }
+  }
+}
