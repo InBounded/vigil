@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist-ghpages/
+dist-offline/
 coverage/
 *.log
 .DS_Store

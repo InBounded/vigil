@@ -1,8 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "noEmit": true
+    "types": ["vite/client", "node"],
+    "paths": {
+      "@vigil-sol/core": ["../../packages/core/src/index.ts"],
+      "@vigil-sol/core/node": ["../../packages/core/src/node.ts"]
+    }
   },
-  "include": ["src"],
+  "include": ["src", "scripts", "vite.config.ts", "vitest.config.ts"],
   "exclude": []
 }

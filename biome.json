@@ -23,6 +23,11 @@
       },
       "style": {
         "noNonNullAssertion": "error"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "error",
+        "noDangerouslySetInnerHtmlWithChildren": "error",
+        "noGlobalEval": "error"
       }
     }
   },
