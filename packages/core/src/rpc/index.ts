@@ -1,3 +1,5 @@
+export type { AllowedRpcMethod } from "./allowlist.js";
+export { ALLOWED_RPC_METHODS, isAllowedRpcMethod } from "./allowlist.js";
 export { chunk, mapWithConcurrency } from "./batch.js";
 export { detectCluster } from "./cluster.js";
 export type {

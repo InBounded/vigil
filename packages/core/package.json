@@ -22,6 +22,10 @@
     "./node": {
       "types": "./dist/node.d.ts",
       "default": "./dist/node.js"
+    },
+    "./rpc-allowlist": {
+      "types": "./dist/rpc/allowlist.d.ts",
+      "default": "./dist/rpc/allowlist.js"
     }
   },
   "files": [
