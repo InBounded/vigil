@@ -1,11 +1,12 @@
 /**
- * Devnet-only signing helpers for scripts (fixture recording now, the Phase 10 end-to-end test
+ * Devnet / local-validator signing helpers for scripts (fixture recording now, the Phase 10 end-to-end test
  * later). This is the ONLY place in the repository allowed to sign or send transactions, under
  * the AGENTS.md carve-out:
  *   - scripts/ only: never imported by packages/core, packages/cli or apps/* (enforced by
  *     packages/core/src/signing-boundary.test.ts);
- *   - devnet only: `connectDevnet` refuses any endpoint whose genesis hash is not devnet's
- *     (docs/reference.md §2), before any key exists;
+ *   - devnet or a local test validator only: `connectSigningCluster` accepts devnet (by its
+ *     genesis hash, docs/reference.md §2) or a validator on a loopback address whose genesis hash
+ *     is not mainnet's or testnet's, and refuses anything else, before any key exists;
  *   - in-memory throwaway keys only: `throwawayKeypair` generates a fresh key that is never
  *     written, logged or returned as bytes; only public keys are printed.
  *
@@ -28,21 +29,45 @@ export const DEVNET_RPC = "https://api.devnet.solana.com";
 /** docs/reference.md §2. */
 export const DEVNET_GENESIS_HASH = "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG";
 
-export class NotDevnetError extends Error {
-  constructor(genesisHash: string) {
-    super(`refusing to sign: the RPC's genesis hash is ${genesisHash}, not devnet's`);
-    this.name = "NotDevnetError";
+/** docs/reference.md §2: the clusters where value lives. Never signed on. */
+const FORBIDDEN_GENESIS_HASHES: Readonly<Record<string, string>> = {
+  "4uhcVJyU9pJkvQyS88uRDiswHXSCkY3zQawwpjk2NsNY": "testnet",
+  "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d": "mainnet",
+};
+
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
+
+export class NotASigningClusterError extends Error {
+  constructor(reason: string) {
+    super(`refusing to sign: ${reason}`);
+    this.name = "NotASigningClusterError";
   }
 }
 
-/** A connection, only after the endpoint proved to be devnet by its genesis hash. */
-export async function connectDevnet(url: string = DEVNET_RPC): Promise<Connection> {
+export type SigningCluster = "devnet" | "local";
+
+/**
+ * A connection, only after the endpoint proved to be devnet (genesis hash) or a local test
+ * validator (loopback address, and a genesis hash that is not mainnet's or testnet's).
+ */
+export async function connectSigningCluster(
+  url: string = DEVNET_RPC,
+): Promise<{ readonly connection: Connection; readonly cluster: SigningCluster }> {
   const connection = new Connection(url, "confirmed");
   const genesisHash = await connection.getGenesisHash();
-  if (genesisHash !== DEVNET_GENESIS_HASH) {
-    throw new NotDevnetError(genesisHash);
+  if (genesisHash === DEVNET_GENESIS_HASH) {
+    return { cluster: "devnet", connection };
   }
-  return connection;
+  const forbidden = FORBIDDEN_GENESIS_HASHES[genesisHash];
+  if (forbidden !== undefined) {
+    throw new NotASigningClusterError(`the RPC is on ${forbidden}`);
+  }
+  if (!LOOPBACK_HOSTS.has(new URL(url).hostname)) {
+    throw new NotASigningClusterError(
+      `genesis hash ${genesisHash} is not devnet's, and ${new URL(url).hostname} is not a loopback address`,
+    );
+  }
+  return { cluster: "local", connection };
 }
 
 /** A fresh key that lives only in this process's memory. */

@@ -119,7 +119,7 @@ describe("signing boundary", () => {
     }
   });
 
-  it("in scripts/, raw signing APIs live only in lib/devnet.ts, which keeps its devnet guard and no file access", () => {
+  it("in scripts/, raw signing APIs live only in lib/devnet.ts, which keeps its cluster guard and no file access", () => {
     const scripts = walk(path.join(ROOT, "scripts")).map(relative);
     const signing = scripts.filter(
       (file) => hits(readFileSync(path.join(ROOT, file), "utf8")).length > 0,
@@ -129,8 +129,12 @@ describe("signing boundary", () => {
     expect(devnet).toContain(
       'DEVNET_GENESIS_HASH = "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG"',
     );
+    // Mainnet and testnet are refused by genesis hash; anything else must be devnet or loopback.
+    expect(devnet).toContain('"5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d": "mainnet"');
+    expect(devnet).toContain('"4uhcVJyU9pJkvQyS88uRDiswHXSCkY3zQawwpjk2NsNY": "testnet"');
+    expect(devnet).toMatch(/if \(forbidden !== undefined\) \{\s*throw new NotASigningClusterError/);
     expect(devnet).toMatch(
-      /if \(genesisHash !== DEVNET_GENESIS_HASH\) \{\s*throw new NotDevnetError/,
+      /if \(!LOOPBACK_HOSTS\.has\(new URL\(url\)\.hostname\)\) \{\s*throw new NotASigningClusterError/,
     );
     expect(devnet).not.toMatch(
       /from\s+["']node:fs|from\s+["']fs|writeFile|\.secretKey|console\.\w+\([^)]*secret/,

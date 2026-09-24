@@ -1,10 +1,11 @@
 #!/usr/bin/env -S pnpm exec tsx
 /**
- * Creates the created → approved → executed sequence on DEVNET and records a `vigil watch` cycle
- * after every step, for the CLI's exactly-once test (fixtures/watch-devnet/devnet-sequence-*).
+ * Creates the created → approved → executed sequence on devnet or a local test validator and
+ * records a `vigil watch` cycle after every step, for the CLI's exactly-once test
+ * (fixtures/watch-<devnet|local>/<devnet|local>-sequence-*).
  *
  * Signs and sends devnet transactions under the AGENTS.md carve-out (scripts/lib/devnet.ts):
- * devnet only (genesis-hash guard), fresh in-memory keys, public keys printed, nothing written
+ * devnet or a loopback local validator only (genesis-hash guard), fresh in-memory keys, public keys printed, nothing written
  * but the fixtures. Recording is read-only (allowlisted methods via KitRpcClient).
  *
  *   1. a 2-of-3 multisig (members A, B, C; A pays), vault 0 funded with 0.02 SOL
@@ -15,6 +16,7 @@
  *   6. A executes                                         → cycle 004: #1 Approved → Executed
  *
  *   pnpm exec tsx scripts/devnet-watch-sequence.ts [--rpc https://api.devnet.solana.com]
+ *   pnpm exec tsx scripts/devnet-watch-sequence.ts --rpc http://127.0.0.1:8899   (local validator)
  */
 import { parseArgs } from "node:util";
 import { type Address, address } from "@solana/kit";
@@ -24,7 +26,7 @@ import { SquadsV4Adapter } from "../packages/core/src/squads/adapter.js";
 import type { SquadsProposalListEntry } from "../packages/core/src/squads/types.js";
 import type { WatchState } from "../packages/core/src/watch/detect.js";
 import {
-  connectDevnet,
+  connectSigningCluster,
   DEVNET_RPC,
   DevnetSquads,
   ensureFunded,
@@ -38,14 +40,14 @@ import {
   writeCycleFixture,
 } from "./lib/watch-recording.js";
 
-const OUT = "watch-devnet";
-const PREFIX = "devnet-sequence";
-
 async function main(): Promise<void> {
   const { values } = parseArgs({ options: { rpc: { default: DEVNET_RPC, type: "string" } } });
   const url = values.rpc;
   // Guard first: no key exists until the endpoint has proved to be devnet.
-  const connection = await connectDevnet(url);
+  const { connection, cluster } = await connectSigningCluster(url);
+  const out = `watch-${cluster}`;
+  const prefix = `${cluster}-sequence`;
+  console.log(`signing on ${cluster} (${new URL(url).host})`);
   const [a, b, c] = [throwawayKeypair(), throwawayKeypair(), throwawayKeypair()];
   console.log(
     `members (throwaway, in memory): A ${a.publicKey.toBase58()}, B ${b.publicKey.toBase58()}, C ${c.publicKey.toBase58()}`,
@@ -76,12 +78,12 @@ async function main(): Promise<void> {
         `${what}: expected events ${JSON.stringify(expected)}, got ${JSON.stringify(events)}`,
       );
     }
-    const name = `${PREFIX}-${String(step).padStart(3, "0")}`;
+    const name = `${prefix}-${String(step).padStart(3, "0")}`;
     await writeCycleFixture(
-      fixturesDir(OUT),
+      fixturesDir(out),
       name,
-      "devnet",
-      `DEVNET. vigil watch cycle after "${what}" on the 2-of-3 multisig ${multisig} created by scripts/devnet-watch-sequence.ts; events: ${events.join("; ") || "none"}`,
+      cluster === "devnet" ? "devnet" : "local-test-validator",
+      `${cluster === "devnet" ? "DEVNET" : "LOCAL TEST VALIDATOR (not devnet; Squads v4 program and ProgramConfig cloned from devnet)"}. vigil watch cycle after "${what}" on the 2-of-3 multisig ${multisig} created by scripts/devnet-watch-sequence.ts; events: ${events.join("; ") || "none"}`,
       cycle,
     );
     console.log(
@@ -113,7 +115,7 @@ async function main(): Promise<void> {
   await squads.execute(index, 0);
   await record("A executed", [`#${index} Approved → Executed`], is("Executed", 2));
 
-  console.log(`done: ${step} cycles in fixtures/${OUT}/`);
+  console.log(`done: ${step} cycles in fixtures/${out}/`);
 }
 
 async function waitUntil(
