@@ -17,7 +17,7 @@ apps/rpc-proxy  ──┘         │
 
 - **`packages/core`** is the isomorphic analysis engine. It performs no I/O directly: all reads go through injected `RpcClient`, `HttpClient`, and `Clock` interfaces (see `AGENTS.md` → Coding standards), which is what makes it runnable in both the browser and Node, and testable offline against fixtures.
 - **`packages/cli`** and **`apps/web`** are presentation layers only. They call `@vigil-sol/core` and render its `AnalysisReport`; they do not contain decoding or risk logic themselves.
-- **`apps/rpc-proxy`** is an optional Cloudflare Workers component that forwards only allowlisted RPC methods (see `docs/reference.md` §4). Nothing depends on it existing — both the web app and the CLI can talk to any RPC endpoint directly.
+- **`apps/rpc-proxy`** is an optional Cloudflare Workers component that forwards only allowlisted RPC methods (see `docs/reference.md` §4), with the method list imported from core (`@vigil-sol/core/rpc-allowlist`). Nothing depends on it existing — both the web app and the CLI can talk to any RPC endpoint directly.
 
 ## Data flow (target, once later phases land)
 

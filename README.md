@@ -22,7 +22,7 @@ It exists as an independent second opinion. If the official signing interface is
 
 ## Web app
 
-> **Mainnet needs your own RPC endpoint (product constraint, not a bug).** The public mainnet RPC (`api.mainnet-beta.solana.com`) refuses requests from browser pages it does not know: a hosted page gets `403 Access forbidden`, and a page opened from a local file is blocked by the browser. The web app therefore has **no default mainnet endpoint**: to analyze mainnet proposals in the browser, add your own RPC endpoint in Settings (or, once it is deployed, use the optional Vigil RPC proxy). Devnet works out of the box with the public devnet endpoint. The CLI is not affected.
+> **Mainnet needs your own RPC endpoint (product constraint, not a bug).** The public mainnet RPC (`api.mainnet-beta.solana.com`) refuses requests from browser pages it does not know: a hosted page gets `403 Access forbidden`, and a page opened from a local file is blocked by the browser. The web app therefore has **no default mainnet endpoint**: to analyze mainnet proposals in the browser, add your own RPC endpoint in Settings, or use a build made with the optional Vigil RPC proxy (`apps/rpc-proxy`, deployment in `docs/maintainers.md`). Order on mainnet: your own endpoint, then the proxy, else the page asks for an endpoint; the page always says which one is in use. The proxy is shared and rate-limited; what it sees and keeps is in `SECURITY.md`. Devnet works out of the box with the public devnet endpoint. The CLI is not affected.
 
 > **Not deployed yet.** Hosting and release publishing come with a later phase.
 
