@@ -1,9 +1,13 @@
 import { browserSettingsStore, browserStorage } from "../settings/storage.js";
 import type { AnalysisEnvironment, WebEnvironment } from "./environment.js";
 
-/** The real environment: localStorage, the clipboard, and (lazily) live RPC/HTTP and IndexedDB. */
-export function browserEnvironment(): WebEnvironment {
-  const build = __VIGIL_BUILD__;
+/**
+ * The real environment: localStorage, the clipboard, and (lazily) live RPC/HTTP and IndexedDB.
+ * `build` defaults to the one this bundle was built as; tests pass it to cover each build.
+ */
+export function browserEnvironment(
+  build: WebEnvironment["build"] = __VIGIL_BUILD__,
+): WebEnvironment {
   const settingsStore = browserSettingsStore(browserStorage(), { persistRpc: build !== "offline" });
   let analysis: Promise<AnalysisEnvironment & { deleteCache(): Promise<boolean> }> | undefined;
   const load = () => {
