@@ -4,7 +4,7 @@ Thanks for your interest in Vigil. Before anything else, read [`AGENTS.md`](AGEN
 
 ## Setup
 
-Requirements: Node.js as pinned in [`.nvmrc`](.nvmrc), and [pnpm](https://pnpm.io/) via Corepack.
+Requirements: Node.js as pinned in [`.nvmrc`](.nvmrc) (at least 22.22.2: `pnpm install` and `pnpm run` refuse older versions), and [pnpm](https://pnpm.io/) via Corepack.
 
 ```sh
 corepack enable
