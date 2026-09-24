@@ -79,7 +79,34 @@ npx @vigil-sol/cli decode <multisig> <index> --json | jq .verdict
 | 3 | Runtime error or invalid input |
 | 4 | The analysis is incomplete and nothing is critical (unless `--fail-on never`) |
 
-Other options: `--no-simulate`, `--no-external` (do not ask the program-verification API), `--history <N>` (compare destinations with the vault's last N transactions), `--fail-on critical|warning|never`, `--limit`/`--status` for `list`. `vigil <command> --help` lists everything. `vigil watch` arrives in a later version.
+Other options: `--no-simulate`, `--no-external` (do not ask the program-verification API), `--history <N>` (compare destinations with the vault's last N transactions), `--fail-on critical|warning|never`, `--limit`/`--status` for `list`. `vigil <command> --help` lists everything.
+
+### Watching a multisig
+
+`vigil watch` alerts your team as soon as a new proposal appears (before anyone approves) and when a proposal is approved (ready to execute), executed, rejected or cancelled:
+
+```sh
+npx @vigil-sol/cli watch <multisig>                                   # every 60 s (--interval, minimum 15)
+npx @vigil-sol/cli watch <multisig> --once --state-file ./state.json  # one cycle, for cron / CI
+```
+
+- **Alerts** carry the verdict, the multisig, the proposal index, up to three top findings, what the proposal does and, if `VIGIL_WEB_URL` is set, a link to the report in the web app. New proposals and proposals that become approved are analysed at that moment; approval alerts also say when a time lock ends. They never contain an RPC URL, only its host. On-chain text is sanitized.
+- **Where alerts go** is set by environment variables only (the webhook URL and the bot token are secrets and are never printed): `VIGIL_DISCORD_WEBHOOK`; `VIGIL_TELEGRAM_BOT_TOKEN` + `VIGIL_TELEGRAM_CHAT_ID` (plain text, no formatting mode). Standard output always gets every alert: one readable line each, or one JSON object per line with `--json`. Logs go to standard error.
+- **Exactly once.** The state (`$XDG_STATE_HOME/vigil/<multisig>.json`, default `~/.local/state/vigil/`) is written before any alert is sent and after each delivery. A failed send is retried with backoff; if it still fails, the alert stays queued for that channel only and is retried on later cycles for 24 hours, then dropped with an error in the log. Only a crash between a delivery and the next write can repeat that one alert. Run one watcher per state file.
+- **First run.** With no state yet, it alerts on the proposals already pending among the latest 20 transactions, so a proposal opened before you started watching is not missed.
+- **Exit codes of `--once`:** 0 when the multisig was read and every alert delivered; 3 otherwise (the state is saved either way).
+
+### Watching with GitHub Actions
+
+[`examples/github-actions/vigil-watch.yml`](examples/github-actions/vigil-watch.yml) runs `vigil watch --once` every 10 minutes and keeps the state in the Actions cache (a new key per run, restored by prefix; saved even when the run fails, so undelivered alerts are retried and delivered ones are not repeated). Secrets go in GitHub Secrets; every action is pinned by commit SHA.
+
+> **`X.Y.Z` in that file is a placeholder.** `@vigil-sol/cli` is not published yet: replace it with a published version (an exact version, not a range) before using the workflow.
+
+Before relying on it, know GitHub's limits ([events that trigger workflows → schedule](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule), [dependency caching](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching)):
+
+- **Scheduled runs can start late**: GitHub documents that the `schedule` event can be delayed under high load (naming the start of every hour; the example avoids minute 0) without giving a bound, so expect delays of several minutes. An alert can therefore arrive well after the proposal was created. For timely alerts, run `vigil watch` as a long-running process on a machine you control.
+- **In a public repository, scheduled workflows are disabled automatically after 60 days without repository activity.** The watcher then stops silently; re-enable it from the Actions tab, or keep the repository active.
+- Scheduled workflows run on the default branch only, and a cache not used for 7 days is evicted (the state is then lost, and the next run behaves like a first run: it alerts again on proposals still pending).
 
 ## Principles
 

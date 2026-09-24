@@ -52,13 +52,17 @@ apps/rpc-proxy  ──┘         │
 - **Phase 5:** simulation, program information, RPC cross-check (gatherers only; see `docs/DECISIONS.md`).
 - **Phase 6 (CLI):**
   - `packages/core/src/analyze/`: report assembly (`analyzeProposal`, `analyzeRawTransaction`) over every gatherer, plus the transfer-balance (VGL-W004) and vault-history (VGL-W005) gatherers; `serializeReport` (deterministic JSON) and `docs/report.schema.json`.
-  - `packages/cli` (`@vigil-sol/cli`, command `vigil`): `decode`, `list`, `verify`, `rules`, `explain` (`watch` in Phase 8). `main(argv, environment)` with everything external injected; human output (verdict first, full addresses, framed snapshot note) or `--json`; exit codes 0–4; secrets only from environment variables, every output redacted.
+  - `packages/cli` (`@vigil-sol/cli`, command `vigil`): `decode`, `list`, `verify`, `rules`, `explain` (`watch` since Phase 8). `main(argv, environment)` with everything external injected; human output (verdict first, full addresses, framed snapshot note) or `--json`; exit codes 0–4; secrets only from environment variables, every output redacted.
   - `.github/workflows/release.yml`: npm publishing with provenance on `v*` tags (first used in Phase 10).
 - **Phase 7 (web app):**
   - `packages/core`: the Node-only fixture loaders moved to the `@vigil-sol/core/node` subpath so the main entry bundles for the browser (a test walks its import graph for Node built-ins).
   - `apps/web` (`@vigil/web`, private): Vite + React, plain CSS. Hash routes (`src/lib/routes.ts`); screens for start, multisig, report, settings, about (`src/screens/`), the report itself in `src/report/` (presentation only: every sentence, verdict and rule explanation comes from core). Everything outside the page is injected through `WebEnvironment` (`src/env/`); the part that talks to the network (RPC, HTTP, IndexedDB cache) is a separate chunk loaded by the first analysis, so the start page does not download the engine. Tests replay real captured fixtures through the same interfaces.
   - Three builds from one source (`vite.config.ts`): hosted (`dist/`, headers in `public/_headers`), GitHub Pages mirror (`dist-ghpages/`, `<meta>` CSP), offline single file (`dist-offline/`, hash-based `<meta>` CSP and SHA-256). The policy lives in one place, `scripts/csp.ts`.
-- **Phase 8+:** to be documented here as they land.
+- **Phase 8 (watching and alerts):**
+  - `packages/core/src/watch/`: `readWatchSnapshot` (allowlisted reads of the multisig and of the new and tracked transaction indices, via `SquadsV4Adapter.readProposals`), `detectChanges` (pure: new proposals by index, status changes into Approved/Executed/Rejected/Cancelled/Closed), the versioned `WatchState` and its parser.
+  - `packages/cli`: `vigil watch <multisig>` (`--interval`, `--once`, `--state-file`), `src/watch/`: alert model and formatting (`alert.ts`, text from core's catalogs through `terminalSafe`), notifiers (`notifiers.ts`: Discord, Telegram, stdout; retry with backoff), transport (`transport.ts`, `fetch` POST, test-only local redirect), state file with a per-notifier outbox (`state-file.ts`).
+  - `examples/github-actions/vigil-watch.yml`, linted with actionlint by `pnpm lint:workflows` (CI installs a pinned, checksum-verified binary).
+- **Phase 9+:** to be documented here as they land.
 
 ## Central contract
 

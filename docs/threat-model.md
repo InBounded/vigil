@@ -66,6 +66,16 @@ A proposal is analyzed as safe, but before it executes, relevant on-chain state 
 
 **Mitigation:** any program invoked by the transaction that has a non-immutable upgrade authority is flagged explicitly. The report shows the slot and wall-clock time the analysis was performed at, and both interfaces offer a clear "re-analyze" action before a signer votes or executes.
 
+## T11 — Alerts as an attack channel (`vigil watch`)
+
+Alerts carry text derived from on-chain data into chat tools that render Markdown, links and mentions, and the watcher holds secrets (webhook URL, bot token, RPC key).
+
+**Mitigations:**
+- **Formatting injection.** Discord: everything that can hold on-chain text sits inside a code block (no Markdown, no masked links, no mentions), backticks are replaced so the block cannot be closed early, and `allowed_mentions: { parse: [] }` suppresses every mention (`@everyone` in a token name pings nobody). Telegram: plain text, no `parse_mode`, link previews off. Every alert text also passes the CLI's `terminalSafe` second barrier (control, bidi, zero-width, tag characters removed).
+- **Secrets.** Notifier secrets come from environment variables only, are validated without being echoed, are added to the output redactor, and never reach the state file; the RPC appears by host only. Requests use no redirects (a redirect could carry the payload elsewhere).
+- **Missed or repeated alerts.** The state is written before sending and after each delivery; failures are kept per channel and retried; a state file of another multisig or network is refused. An attacker who can make the RPC lie can hide a proposal from the watcher (as from any analysis, T4): use a trusted RPC.
+- **Network destinations.** The watcher contacts only the RPC, the verification API (unless `--no-external`) and the channels the user configured. There is no telemetry.
+
 ## T-web — Attacks on the web page itself
 
 - **Hostile strings turned into markup or code.** On-chain text is rendered by React as text only; `dangerouslySetInnerHTML`, `innerHTML`, `eval`, `new Function` and similar are banned by Biome rules and by a source test. A second barrier (`safeText`) strips control, bidi, zero-width and tag characters from every report text, including text core passes through unchanged (simulation logs). A test renders a real analysis of a transaction whose memo carries HTML, a script tag, a `javascript:` link and invisible characters.
