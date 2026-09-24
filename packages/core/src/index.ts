@@ -53,3 +53,4 @@ export * from "./sanitize/index.js";
 export * from "./simulate/index.js";
 export * from "./squads/index.js";
 export * from "./tokens/index.js";
+export * from "./watch/index.js";
