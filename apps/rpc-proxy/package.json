@@ -16,11 +16,11 @@
     "@vigil-sol/core": "workspace:*"
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "1.2.3",
+    "@cloudflare/vitest-plugin": "1.4.4",
     "@vitest/runner": "4.1.11",
-    "@vitest/snapshot": "4.1.11",
-    "vite": "8.3.0",
-    "vitest": "4.1.11",
-    "wrangler": "4.136.3"
+    "@vitest/snapshot": "5.0.5",
+    "vite": "8.3.4",
+    "vitest": "5.0.5",
+    "wrangler": "4.151.1"
   }
 }
